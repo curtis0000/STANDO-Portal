@@ -1,26 +1,33 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
-<head>
+<html lang="zh-TW"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>STANDO SYSTEMS</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --bg:       #070604;
-  --amber:    #C88C18;
-  --amber-hi: #E8B040;
-  --amber-lo: #7A5210;
-  --amber-glow: rgba(200, 140, 24, 0.18);
+  --amber:    #B8923E;
+  --amber-hi: #D0A85A;
+  --amber-lo: #6E5520;
+  --amber-glow: rgba(184, 146, 62, 0.18);
   --text:     #D8DCE2;
   --text-hi:  #FFFFFF;
   --text-lo:  #5C6068;
+  --text-brand: #E8D8B8;
   --silver:   #E8ECF2;
   --silver-glow: rgba(220, 228, 240, 0.5);
-  --line:     rgba(185, 128, 20, 0.3);
-  --line-hi:  rgba(232, 176, 64, 0.7);
+  --line:     rgba(184, 146, 62, 0.3);
+  --line-hi:  rgba(208, 168, 90, 0.7);
   --font-hud: 'Share Tech Mono', monospace;
   --font-brand: 'Roboto', sans-serif;
 }
@@ -51,18 +58,23 @@ body::after {
   z-index: 0;
 }
 
-/* Galaxy canvas at center */
-#galaxy-canvas {
-  position: absolute;
+/* Galaxy mount — full viewport, naturally fades to bg */
+#galaxy-mount {
+  position: fixed;
   left: 50%; top: 50%;
   transform: translate(-50%, -50%);
-  width: 40%; height: 40%;
-  z-index: 6;
+  width: 120vmin; height: 120vmin;
+  z-index: 1;
   opacity: 0;
-  transition: opacity 1.2s ease;
+  transition: opacity 1.6s ease;
   pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  /* Radial fade-out so the galaxy bleeds into the page bg */
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, rgba(0,0,0,0.6) 55%, transparent 85%);
+          mask-image: radial-gradient(ellipse at center, black 30%, rgba(0,0,0,0.6) 55%, transparent 85%);
 }
-#galaxy-canvas.visible { opacity: 1; }
+#galaxy-mount.visible { opacity: 1; }
+#galaxy-mount canvas { display: block; }
 
 /* Corner decorations */
 .corner {
@@ -129,10 +141,10 @@ body::after {
   font-weight: 900;
   font-size: 20px;
   letter-spacing: 0.45em;
-  color: var(--silver);
+  color: var(--text-brand);
   text-transform: uppercase;
   padding-left: 0.45em;
-  text-shadow: 0 0 20px rgba(220,228,240,0.4), 0 0 40px rgba(180,200,220,0.2);
+  text-shadow: 0 0 20px rgba(232, 216, 184, 0.45), 0 0 40px rgba(232, 216, 184, 0.2);
   mix-blend-mode: screen;
 }
 .brand-status {
@@ -181,8 +193,8 @@ body::after {
   font-weight: 900;
   font-size: clamp(20px, 3.2vmin, 34px);
   letter-spacing: 0.12em;
-  color: var(--silver);
-  text-shadow: 0 0 18px rgba(220, 228, 240, 0.35), 0 0 32px rgba(180, 200, 220, 0.15);
+  color: var(--text-brand);
+  text-shadow: 0 0 18px rgba(232, 216, 184, 0.45), 0 0 36px rgba(232, 216, 184, 0.2);
   transition: all 0.35s ease;
   line-height: 1;
 }
@@ -256,11 +268,11 @@ body::after {
 .tool-node:hover .tool-pip {
   width: 10px; height: 10px;
   background: var(--amber-hi);
-  box-shadow: 0 0 16px var(--amber-hi), 0 0 40px rgba(232,176,64,0.4);
+  box-shadow: 0 0 16px var(--amber-hi), 0 0 40px rgba(208, 168, 90,0.4);
 }
 .tool-node:hover .tool-name {
-  color: #fff;
-  text-shadow: 0 0 24px rgba(255,255,255,0.7), 0 0 48px rgba(200,140,24,0.3);
+  color: #FFE8B0;
+  text-shadow: 0 0 28px rgba(255, 232, 176, 0.85), 0 0 56px rgba(208, 168, 90, 0.4);
 }
 .tool-node:hover .tool-subtitle { color: var(--silver); opacity: 1; }
 .tool-node:hover .tool-desc { color: var(--amber); }
@@ -305,65 +317,6 @@ body::after {
   opacity: 0;
 }
 
-/* Tweaks panel */
-#tweaks-panel {
-  display: none;
-  position: fixed;
-  bottom: 70px; right: 24px;
-  width: 260px;
-  background: rgba(7,6,4,0.96);
-  border: 1px solid var(--line);
-  z-index: 950;
-  font-family: var(--font-hud);
-  font-size: 10px;
-  color: var(--text);
-}
-#tweaks-panel::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--amber), transparent);
-}
-.tweaks-header {
-  padding: 10px 14px;
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  color: var(--amber);
-  border-bottom: 1px solid var(--line);
-}
-.tweaks-row {
-  display: flex;
-  align-items: center;
-  padding: 8px 14px;
-  gap: 8px;
-  border-bottom: 1px solid rgba(185,128,20,0.08);
-}
-.tweaks-row label {
-  flex: 0 0 60px;
-  color: var(--text-lo);
-  font-size: 9px;
-  letter-spacing: 0.1em;
-}
-.tweaks-row input[type="text"] {
-  flex: 1;
-  background: rgba(185,128,20,0.06);
-  border: 1px solid var(--line);
-  color: var(--text);
-  font-family: var(--font-hud);
-  font-size: 9px;
-  padding: 4px 8px;
-  outline: none;
-  letter-spacing: 0.05em;
-}
-.tweaks-row input[type="text"]:focus {
-  border-color: var(--amber);
-}
-.tweaks-section {
-  padding: 8px 14px 2px;
-  font-size: 9px;
-  letter-spacing: 0.15em;
-  color: var(--text-lo);
-}
 </style>
 </head>
 <body>
@@ -373,6 +326,9 @@ body::after {
 
 <!-- Canvas bg -->
 <canvas id="canvas-bg"></canvas>
+
+<!-- 3D Galaxy mount (full-viewport, fades into bg) -->
+<div id="galaxy-mount"></div>
 
 <!-- Corner decorations -->
 <div class="corner tl"></div>
@@ -387,11 +343,9 @@ body::after {
 <!-- HUD Stage -->
 <div id="hud-stage">
   <svg id="hud-svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
-  <canvas id="galaxy-canvas"></canvas>
 
   <!-- Tool nodes positioned by % of hud-stage (node r=320 in 1000 viewbox = 32%) -->
-  <div class="tool-node" id="node-elsa" data-id="elsa" data-pos="top"
-    style="left:50%; top:18%;">
+  <div class="tool-node" id="node-elsa" data-id="elsa" data-pos="top" style="left:50%; top:18%;">
     <div class="tool-card">
       <div class="tool-pip"></div>
       <div class="tool-name">ELSA</div>
@@ -407,8 +361,7 @@ body::after {
     </div>
   </div>
 
-  <div class="tool-node" id="node-chef" data-id="chef" data-pos="right"
-    style="left:82%; top:50%;">
+  <div class="tool-node" id="node-chef" data-id="chef" data-pos="right" style="left:82%; top:50%;">
     <div class="tool-card">
       <div class="tool-pip"></div>
       <div class="tool-name">CHEF</div>
@@ -424,8 +377,7 @@ body::after {
     </div>
   </div>
 
-  <div class="tool-node" id="node-ida" data-id="ida" data-pos="bottom"
-    style="left:50%; top:82%;">
+  <div class="tool-node" id="node-ida" data-id="ida" data-pos="bottom" style="left:50%; top:82%;">
     <div class="tool-card">
       <div class="tool-pip"></div>
       <div class="tool-name">IDA</div>
@@ -441,8 +393,7 @@ body::after {
     </div>
   </div>
 
-  <div class="tool-node" id="node-worker" data-id="worker" data-pos="left"
-    style="left:18%; top:50%;">
+  <div class="tool-node" id="node-worker" data-id="worker" data-pos="left" style="left:18%; top:50%;">
     <div class="tool-card">
       <div class="tool-pip"></div>
       <div class="tool-name">WORKER</div>
@@ -452,7 +403,7 @@ body::after {
     <div class="tool-detail">
       <div style="color:var(--amber);margin-bottom:5px;font-size:9px;">WORKER MODULE</div>
       <div>▸ CREW DISPATCH</div>
-      <div>▸ JOB ROUTING & TRACKING</div>
+      <div>▸ JOB ROUTING &amp; TRACKING</div>
       <div>▸ FIELD OPERATIONS</div>
       <div style="margin-top:7px;color:var(--text-lo);">[ CLICK TO LAUNCH ]</div>
     </div>
@@ -468,24 +419,6 @@ body::after {
 
 <!-- Status bar -->
 <div id="status-bar">HOVER MODULE TO IDENTIFY &nbsp;◈&nbsp; CLICK TO LAUNCH</div>
-
-<!-- Tweaks panel -->
-<div id="tweaks-panel">
-  <div class="tweaks-header">TWEAKS — MODULE URLS</div>
-  <div class="tweaks-section">TOOL LINKS</div>
-  <div class="tweaks-row"><label>ELSA</label><input type="text" id="tw-elsa" placeholder="https://..." /></div>
-  <div class="tweaks-row"><label>CHEF</label><input type="text" id="tw-chef" placeholder="https://..." /></div>
-  <div class="tweaks-row"><label>IDA</label><input type="text" id="tw-ida" placeholder="https://..." /></div>
-  <div class="tweaks-row"><label>WORKER</label><input type="text" id="tw-worker" placeholder="https://..." /></div>
-  <div class="tweaks-section" style="padding-top:10px;">APPEARANCE</div>
-  <div class="tweaks-row">
-    <label>TARGET</label>
-    <select id="tw-target" style="flex:1;background:rgba(185,128,20,0.06);border:1px solid var(--line);color:var(--text);font-family:var(--font-hud);font-size:9px;padding:4px 8px;outline:none;">
-      <option value="_blank">New Tab</option>
-      <option value="_self">Same Tab</option>
-    </select>
-  </div>
-</div>
 
 <script>
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
@@ -555,10 +488,10 @@ svg.appendChild(defs);
 
 // ── Rings ──
 const RINGS = [
-  { r: 268, stroke: 'rgba(185,128,20,0.18)', sw: 1,   dash: null },
-  { r: 248, stroke: 'rgba(185,128,20,0.28)', sw: 1.5, dash: null },
-  { r: 148, stroke: 'rgba(185,128,20,0.14)', sw: 1,   dash: null },
-  { r: 120, stroke: 'rgba(185,128,20,0.10)', sw: 0.8, dash: null },
+  { r: 268, stroke: 'rgba(184, 146, 62,0.18)', sw: 1,   dash: null },
+  { r: 248, stroke: 'rgba(184, 146, 62,0.28)', sw: 1.5, dash: null },
+  { r: 148, stroke: 'rgba(184, 146, 62,0.14)', sw: 1,   dash: null },
+  { r: 120, stroke: 'rgba(184, 146, 62,0.10)', sw: 0.8, dash: null },
 ];
 
 const ringEls = RINGS.map(({ r, stroke, sw, dash }) => {
@@ -572,11 +505,11 @@ const ringEls = RINGS.map(({ r, stroke, sw, dash }) => {
 });
 
 // Rotating dashed rings
-const rotDash1 = el('circle', { cx:CX, cy:CY, r:278, fill:'none', stroke:'rgba(185,128,20,0.08)', 'stroke-width':'1', 'stroke-dasharray':'6 18' });
+const rotDash1 = el('circle', { cx:CX, cy:CY, r:278, fill:'none', stroke:'rgba(184, 146, 62,0.08)', 'stroke-width':'1', 'stroke-dasharray':'6 18' });
 const ra1 = el('animateTransform', { attributeName:'transform', type:'rotate', from:`0 ${CX} ${CY}`, to:`360 ${CX} ${CY}`, dur:'80s', repeatCount:'indefinite' });
 rotDash1.appendChild(ra1); svg.appendChild(rotDash1);
 
-const rotDash2 = el('circle', { cx:CX, cy:CY, r:105, fill:'none', stroke:'rgba(185,128,20,0.10)', 'stroke-width':'1', 'stroke-dasharray':'3 9' });
+const rotDash2 = el('circle', { cx:CX, cy:CY, r:105, fill:'none', stroke:'rgba(184, 146, 62,0.10)', 'stroke-width':'1', 'stroke-dasharray':'3 9' });
 const ra2 = el('animateTransform', { attributeName:'transform', type:'rotate', from:`0 ${CX} ${CY}`, to:`-360 ${CX} ${CY}`, dur:'50s', repeatCount:'indefinite' });
 rotDash2.appendChild(ra2); svg.appendChild(rotDash2);
 
@@ -591,8 +524,8 @@ Object.entries(TOOLS).forEach(([id, tool]) => {
   // Background sector (dim)
   const bg = el('path', {
     d: sectorPath(238, 198, a0, a1),
-    fill: 'rgba(100,70,10,0.05)',
-    stroke: 'rgba(185,128,20,0.15)',
+    fill: 'rgba(90, 72, 30,0.05)',
+    stroke: 'rgba(184, 146, 62,0.15)',
     'stroke-width': '0.5',
   });
   arcGroup.appendChild(bg);
@@ -600,8 +533,8 @@ Object.entries(TOOLS).forEach(([id, tool]) => {
   // Active sector (hover)
   const active = el('path', {
     d: sectorPath(238, 198, a0, a1),
-    fill: 'rgba(200,140,24,0.10)',
-    stroke: 'rgba(200,140,24,0.65)',
+    fill: 'rgba(200, 162, 86,0.10)',
+    stroke: 'rgba(200, 162, 86,0.65)',
     'stroke-width': '1.2',
     opacity: '0',
     filter: 'url(#glow-soft)',
@@ -615,7 +548,7 @@ Object.entries(TOOLS).forEach(([id, tool]) => {
   const outer = pt(tool.angle, 268);
   const tick = el('line', {
     x1: inner.x, y1: inner.y, x2: outer.x, y2: outer.y,
-    stroke: 'rgba(185,128,20,0.5)', 'stroke-width': '1.5'
+    stroke: 'rgba(184, 146, 62,0.5)', 'stroke-width': '1.5'
   });
   arcGroup.appendChild(tick);
 
@@ -624,7 +557,7 @@ Object.entries(TOOLS).forEach(([id, tool]) => {
   const D = 4;
   const diamond = el('polygon', {
     points: `${dm.x},${dm.y-D} ${dm.x+D},${dm.y} ${dm.x},${dm.y+D} ${dm.x-D},${dm.y}`,
-    fill: 'rgba(185,128,20,0.5)',
+    fill: 'rgba(184, 146, 62,0.5)',
     id: `diamond-${id}`,
   });
   diamond.style.transition = 'fill 0.3s ease';
@@ -639,7 +572,7 @@ Object.entries(TOOLS).forEach(([id, tool]) => {
   const outerPt = pt(tool.angle, 312);
   const line = el('line', {
     x1: innerPt.x, y1: innerPt.y, x2: outerPt.x, y2: outerPt.y,
-    stroke: 'rgba(185,128,20,0.22)', 'stroke-width': '1', 'stroke-dasharray': '3 5',
+    stroke: 'rgba(184, 146, 62,0.22)', 'stroke-width': '1', 'stroke-dasharray': '3 5',
     id: `line-${id}`,
   });
   line.style.transition = 'all 0.3s ease';
@@ -652,10 +585,10 @@ svg.appendChild(lineGroup);
   const inner = pt(angle, 8), outer = pt(angle, 22);
   svg.appendChild(el('line', {
     x1: inner.x, y1: inner.y, x2: outer.x, y2: outer.y,
-    stroke: 'rgba(185,128,20,0.3)', 'stroke-width': '1'
+    stroke: 'rgba(184, 146, 62,0.3)', 'stroke-width': '1'
   }));
 });
-svg.appendChild(el('circle', { cx:CX, cy:CY, r:6, fill:'none', stroke:'rgba(185,128,20,0.3)', 'stroke-width':'1' }));
+svg.appendChild(el('circle', { cx:CX, cy:CY, r:6, fill:'none', stroke:'rgba(184, 146, 62,0.3)', 'stroke-width':'1' }));
 
 // ─── NODE INTERACTIONS ─────────────────────────────────────────────────────────
 Object.keys(TOOLS).forEach(id => {
@@ -666,13 +599,13 @@ Object.keys(TOOLS).forEach(id => {
 
   node.addEventListener('mouseenter', () => {
     if (arc)  arc.style.opacity = '1';
-    if (line) { line.setAttribute('stroke','rgba(200,140,24,0.55)'); line.setAttribute('stroke-dasharray','2 3'); }
-    if (dmnd) dmnd.setAttribute('fill','rgba(200,140,24,0.9)');
+    if (line) { line.setAttribute('stroke','rgba(200, 162, 86,0.55)'); line.setAttribute('stroke-dasharray','2 3'); }
+    if (dmnd) dmnd.setAttribute('fill','rgba(200, 162, 86,0.9)');
   });
   node.addEventListener('mouseleave', () => {
     if (arc)  arc.style.opacity = '0';
-    if (line) { line.setAttribute('stroke','rgba(185,128,20,0.22)'); line.setAttribute('stroke-dasharray','3 5'); }
-    if (dmnd) dmnd.setAttribute('fill','rgba(185,128,20,0.5)');
+    if (line) { line.setAttribute('stroke','rgba(184, 146, 62,0.22)'); line.setAttribute('stroke-dasharray','3 5'); }
+    if (dmnd) dmnd.setAttribute('fill','rgba(184, 146, 62,0.5)');
   });
   node.addEventListener('click', () => {
     const url = TOOLS[id].url();
@@ -687,141 +620,6 @@ Object.keys(TOOLS).forEach(id => {
     }
   });
 });
-
-// ─── GALAXY CANVAS (center) ──────────────────────────────────────────────────
-const gCanvas = document.getElementById('galaxy-canvas');
-const gCtx = gCanvas.getContext('2d');
-let GW, GH;
-
-function resizeGalaxy() {
-  const rect = gCanvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  gCanvas.width  = rect.width  * dpr;
-  gCanvas.height = rect.height * dpr;
-  GW = rect.width; GH = rect.height;
-  gCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-resizeGalaxy();
-window.addEventListener('resize', resizeGalaxy);
-
-// Generate stars with 3D-ish distribution (logarithmic density toward center)
-const stars = [];
-for (let i = 0; i < 140; i++) {
-  // spiral galaxy: 3 arms
-  const arm = Math.floor(Math.random() * 3);
-  const armAngle = (arm * 120) + (Math.random() - 0.5) * 50;
-  // radial distance, biased toward center
-  const r01 = Math.pow(Math.random(), 0.6);
-  const radius = r01 * 0.48;  // fraction of canvas
-  // angle = armAngle + tightness * r
-  const angle = armAngle + r01 * 220 + (Math.random() - 0.5) * 30;
-  // depth (z) for 3D parallax
-  const z = Math.random();  // 0 = back, 1 = front
-
-  stars.push({
-    baseR: radius,
-    baseA: angle * Math.PI / 180,
-    z,
-    size: 0.4 + z * 1.6 + Math.random() * 0.6,
-    baseAlpha: 0.15 + z * 0.65 + Math.random() * 0.2,
-    twinkleSpeed: 0.4 + Math.random() * 1.2,
-    twinklePhase: Math.random() * Math.PI * 2,
-    breathPhase: Math.random() * Math.PI * 2,
-    hueShift: Math.random(),
-  });
-}
-
-// Core glow stars (very center bright)
-const coreStars = [];
-for (let i = 0; i < 30; i++) {
-  coreStars.push({
-    r: Math.random() * 0.08,
-    a: Math.random() * Math.PI * 2,
-    size: 0.5 + Math.random() * 1.2,
-    alpha: 0.5 + Math.random() * 0.5,
-    phase: Math.random() * Math.PI * 2,
-  });
-}
-
-let galaxyTime = 0;
-function drawGalaxy() {
-  galaxyTime += 0.012;
-  gCtx.clearRect(0, 0, GW, GH);
-
-  const cx = GW / 2, cy = GH / 2;
-  const maxR = Math.min(GW, GH);
-
-  // Outer halo glow
-  const halo = gCtx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 0.5);
-  halo.addColorStop(0, 'rgba(180, 200, 230, 0.10)');
-  halo.addColorStop(0.3, 'rgba(150, 170, 220, 0.06)');
-  halo.addColorStop(0.7, 'rgba(120, 140, 180, 0.02)');
-  halo.addColorStop(1, 'rgba(0, 0, 0, 0)');
-  gCtx.fillStyle = halo;
-  gCtx.fillRect(0, 0, GW, GH);
-
-  // Core bright glow
-  const core = gCtx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 0.18);
-  core.addColorStop(0, 'rgba(240, 245, 255, 0.55)');
-  core.addColorStop(0.3, 'rgba(200, 220, 250, 0.25)');
-  core.addColorStop(0.7, 'rgba(150, 170, 210, 0.08)');
-  core.addColorStop(1, 'rgba(0,0,0,0)');
-  gCtx.fillStyle = core;
-  gCtx.fillRect(0, 0, GW, GH);
-
-  // Spiral arm stars with breathing
-  const slowRot = galaxyTime * 0.06;
-  gCtx.globalCompositeOperation = 'screen';
-  stars.forEach(s => {
-    // breathing: radius slowly oscillates
-    const breath = Math.sin(galaxyTime * 0.4 + s.breathPhase) * 0.025;
-    const r = (s.baseR + breath) * maxR;
-    const a = s.baseA + slowRot * (0.5 + s.z * 0.8);
-    const x = cx + Math.cos(a) * r;
-    const y = cy + Math.sin(a) * r * 0.95;  // slight ellipse for 3D tilt
-
-    // twinkle
-    const twink = 0.7 + 0.3 * Math.sin(galaxyTime * s.twinkleSpeed + s.twinklePhase);
-    const alpha = s.baseAlpha * twink;
-
-    // color: cooler at edge, warmer near core
-    const dist = s.baseR / 0.5;
-    const warmth = 1 - dist;
-    const R = 200 + warmth * 40 + s.hueShift * 15;
-    const G = 215 + warmth * 25;
-    const B = 240;
-
-    gCtx.beginPath();
-    gCtx.fillStyle = `rgba(${R|0}, ${G|0}, ${B|0}, ${alpha})`;
-    gCtx.arc(x, y, s.size, 0, Math.PI * 2);
-    gCtx.fill();
-
-    // glow for bigger stars
-    if (s.size > 1.2) {
-      gCtx.beginPath();
-      gCtx.fillStyle = `rgba(${R|0}, ${G|0}, ${B|0}, ${alpha * 0.15})`;
-      gCtx.arc(x, y, s.size * 3, 0, Math.PI * 2);
-      gCtx.fill();
-    }
-  });
-
-  // Core stars (tight cluster)
-  coreStars.forEach(s => {
-    const breath = Math.sin(galaxyTime * 0.6 + s.phase) * 0.4 + 0.6;
-    const r = s.r * maxR;
-    const a = s.a + slowRot * 1.5;
-    const x = cx + Math.cos(a) * r;
-    const y = cy + Math.sin(a) * r * 0.95;
-    gCtx.beginPath();
-    gCtx.fillStyle = `rgba(255, 250, 240, ${s.alpha * breath})`;
-    gCtx.arc(x, y, s.size, 0, Math.PI * 2);
-    gCtx.fill();
-  });
-
-  gCtx.globalCompositeOperation = 'source-over';
-  requestAnimationFrame(drawGalaxy);
-}
-drawGalaxy();
 
 // ─── BACKGROUND CANVAS ────────────────────────────────────────────────────────
 const canvas = document.getElementById('canvas-bg');
@@ -846,7 +644,7 @@ function draw() {
   ctx.clearRect(0, 0, W, H);
 
   // Subtle grid
-  ctx.strokeStyle = 'rgba(185,128,20,0.035)';
+  ctx.strokeStyle = 'rgba(184, 146, 62,0.035)';
   ctx.lineWidth = 1;
   const gs = 64;
   for (let x = 0; x < W; x += gs) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
@@ -866,7 +664,7 @@ function draw() {
     if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0;
     ctx.beginPath();
     ctx.arc(p.x * W, p.y * H, p.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(200,140,24,${p.a})`;
+    ctx.fillStyle = `rgba(200, 162, 86,${p.a})`;
     ctx.fill();
   });
 
@@ -926,7 +724,7 @@ updateClock();
 
       // Phase 6: show galaxy + center + status
       setTimeout(() => {
-        document.getElementById('galaxy-canvas').classList.add('visible');
+        document.getElementById('galaxy-mount').classList.add('visible');
       }, 350);
       setTimeout(() => {
         document.getElementById('center-mark').classList.add('visible');
@@ -945,36 +743,395 @@ updateClock();
   setTimeout(() => requestAnimationFrame(animScan), 80);
 })();
 
-// ─── TWEAKS ───────────────────────────────────────────────────────────────────
-window.addEventListener('message', e => {
-  if (e.data?.type === '__activate_edit_mode') {
-    document.getElementById('tweaks-panel').style.display = 'block';
-    // Populate current values
-    ['elsa','chef','ida','worker'].forEach(id => {
-      document.getElementById(`tw-${id}`).value = config[`${id}_url`] || '';
-    });
-    document.getElementById('tw-target').value = config.link_target || '_blank';
-  }
-  if (e.data?.type === '__deactivate_edit_mode') {
-    document.getElementById('tweaks-panel').style.display = 'none';
-  }
-});
-
-['elsa','chef','ida','worker'].forEach(id => {
-  const inp = document.getElementById(`tw-${id}`);
-  inp.addEventListener('input', () => {
-    config[`${id}_url`] = inp.value;
-    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { [`${id}_url`]: inp.value } }, '*');
-  });
-});
-document.getElementById('tw-target').addEventListener('change', e => {
-  config.link_target = e.target.value;
-  window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { link_target: e.target.value } }, '*');
-});
-
-// Signal tweaks available
-window.addEventListener('message', () => {});
-window.parent.postMessage({ type: '__edit_mode_available' }, '*');
 </script>
-</body>
-</html>
+
+<!-- JarvisCore 3D galaxy component (inlined) -->
+<script type="text/babel" data-presets="react">
+// JarvisCore.jsx — Jarvis-style 3D particle galaxy
+// React + Three.js component. Self-contained.
+
+const { useRef, useEffect, useState, useCallback } = React;
+
+// Particle texture generated on canvas (soft glow point)
+function makeParticleTexture() {
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+  grad.addColorStop(0.0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.2, 'rgba(180,240,255,0.85)');
+  grad.addColorStop(0.5, 'rgba(60,180,230,0.35)');
+  grad.addColorStop(1.0, 'rgba(0,80,140,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
+  return tex;
+}
+
+// Generate galaxy particles
+function makeGalaxyGeometry(opts, palette) {
+  const { count, armCount, armTightness, radius, thickness, coreBias } = opts;
+  const positions = new Float32Array(count * 3);
+  const colors    = new Float32Array(count * 3);
+  const sizes     = new Float32Array(count);
+  const seeds     = new Float32Array(count); // for per-particle motion
+
+  const colorCore  = new THREE.Color(palette.core);
+  const colorMid   = new THREE.Color(palette.mid);
+  const colorOuter = new THREE.Color(palette.outer);
+  const colorDeep  = new THREE.Color(palette.deep);
+
+  for (let i = 0; i < count; i++) {
+    // radius — bias toward center
+    const r01 = Math.pow(Math.random(), coreBias);
+    const r = r01 * radius;
+
+    // pick an arm
+    const arm = Math.floor(Math.random() * armCount);
+    const baseAngle = (arm / armCount) * Math.PI * 2;
+    // spiral: angle increases with radius
+    const spiral = r * armTightness;
+    // random spread along the arm
+    const spread = (Math.random() - 0.5) * 0.45 * (1 - r01 * 0.4);
+    const angle = baseAngle + spiral + spread;
+
+    // vertical thickness — flat disk with slight bulge near core
+    const bulge = (1 - r01) * 0.6 + 0.1;
+    const y = (Math.random() - 0.5) * thickness * bulge;
+
+    const x = Math.cos(angle) * r;
+    const z = Math.sin(angle) * r;
+
+    positions[i * 3 + 0] = x;
+    positions[i * 3 + 1] = y;
+    positions[i * 3 + 2] = z;
+
+    // color blend
+    let c = new THREE.Color();
+    if (r01 < 0.2) {
+      c.lerpColors(colorCore, colorMid, r01 / 0.2);
+    } else if (r01 < 0.65) {
+      c.lerpColors(colorMid, colorOuter, (r01 - 0.2) / 0.45);
+    } else {
+      c.lerpColors(colorOuter, colorDeep, (r01 - 0.65) / 0.35);
+    }
+    colors[i * 3 + 0] = c.r;
+    colors[i * 3 + 1] = c.g;
+    colors[i * 3 + 2] = c.b;
+
+    // size — bigger near core
+    sizes[i] = (1 - r01) * 2.5 + 0.5 + Math.random() * 0.8;
+
+    seeds[i] = Math.random();
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
+  geo.setAttribute('aSize',    new THREE.BufferAttribute(sizes, 1));
+  geo.setAttribute('aSeed',    new THREE.BufferAttribute(seeds, 1));
+  return geo;
+}
+
+// Shader-driven points: per-particle size + breathing + flicker
+const PARTICLE_VERT = `
+attribute float aSize;
+attribute float aSeed;
+varying vec3 vColor;
+varying float vAlpha;
+
+uniform float uTime;
+uniform float uBreath;     // 0..1 breathing wave
+uniform float uExcite;     // 0..1 hover/click excitement
+uniform float uPixelRatio;
+
+void main() {
+  vColor = color;
+
+  // per-particle flicker
+  float flicker = 0.85 + 0.25 * sin(uTime * (1.5 + aSeed * 3.0) + aSeed * 6.28);
+  vAlpha = flicker * (0.75 + uBreath * 0.35) * (1.0 + uExcite * 0.4) * 0.75;
+
+  // position with breathing scale
+  vec3 pos = position * (1.0 + uBreath * 0.06 + uExcite * 0.04);
+
+  vec4 mv = modelViewMatrix * vec4(pos, 1.0);
+  gl_Position = projectionMatrix * mv;
+
+  float distAtten = 320.0 / max(-mv.z, 1.0);
+  gl_PointSize = aSize * distAtten * uPixelRatio * (1.0 + uBreath * 0.12 + uExcite * 0.25);
+}
+`;
+
+const PARTICLE_FRAG = `
+varying vec3 vColor;
+varying float vAlpha;
+uniform sampler2D uTex;
+
+void main() {
+  vec4 tex = texture2D(uTex, gl_PointCoord);
+  if (tex.a < 0.01) discard;
+  gl_FragColor = vec4(vColor, tex.a * vAlpha);
+}
+`;
+
+function JarvisCore({
+  size = 600,
+  autoplay = true,
+  onLaunch, onHover, onPress,
+  palette = {
+    core:    '#a8efff',
+    mid:     '#00f3ff',
+    outer:   '#0892d0',
+    deep:    '#063a5e',
+    coreGlow:   '#00f3ff',
+    innerGlow:  '#a8efff',
+    halo:    { r: 0.35, g: 0.75, b: 0.95 },
+  },
+  density = 1.0,
+}) {
+  const mountRef = useRef(null);
+  const stateRef = useRef({ excite: 0, targetExcite: 0, rot: 0, rotSpeed: 0.04, time: 0 });
+  const [hover, setHover] = useState(false);
+  const [pressed, setPressed] = useState(false);
+
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = null;
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+    camera.position.set(0, 5, 16);
+    camera.lookAt(0, 0, 0);
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(dpr);
+    renderer.setSize(size, size);
+    renderer.setClearColor(0x000000, 0);
+    mount.appendChild(renderer.domElement);
+
+    // Particle texture
+    const tex = makeParticleTexture();
+
+    // Galaxy geometry
+    const galaxyGeo = makeGalaxyGeometry({
+      count: Math.round(2400 * density),
+      armCount: 3,
+      armTightness: 1.4,
+      radius: 10,
+      thickness: 2.0,
+      coreBias: 0.4,
+    }, palette);
+
+    // Shader material
+    const mat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime:       { value: 0 },
+        uBreath:     { value: 0 },
+        uExcite:     { value: 0 },
+        uPixelRatio: { value: dpr },
+        uTex:        { value: tex },
+      },
+      vertexShader: PARTICLE_VERT,
+      fragmentShader: PARTICLE_FRAG,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      vertexColors: true,
+    });
+
+    const points = new THREE.Points(galaxyGeo, mat);
+    scene.add(points);
+
+    // Slight tilt for 3D depth
+    points.rotation.x = 0.45;
+
+    // Outer halo particles (sparse, slow drift)
+    const haloGeo = new THREE.BufferGeometry();
+    const haloCount = Math.round(180 * density);
+    const haloPos = new Float32Array(haloCount * 3);
+    const haloCol = new Float32Array(haloCount * 3);
+    const haloSize = new Float32Array(haloCount);
+    const haloSeed = new Float32Array(haloCount);
+    for (let i = 0; i < haloCount; i++) {
+      const r = 7 + Math.random() * 4;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const theta = Math.random() * Math.PI * 2;
+      haloPos[i*3+0] = r * Math.sin(phi) * Math.cos(theta);
+      haloPos[i*3+1] = r * Math.cos(phi) * 0.5;
+      haloPos[i*3+2] = r * Math.sin(phi) * Math.sin(theta);
+      haloCol[i*3+0] = palette.halo.r;
+      haloCol[i*3+1] = palette.halo.g;
+      haloCol[i*3+2] = palette.halo.b;
+      haloSize[i] = 0.5 + Math.random() * 0.8;
+      haloSeed[i] = Math.random();
+    }
+    haloGeo.setAttribute('position', new THREE.BufferAttribute(haloPos, 3));
+    haloGeo.setAttribute('color',    new THREE.BufferAttribute(haloCol, 3));
+    haloGeo.setAttribute('aSize',    new THREE.BufferAttribute(haloSize, 1));
+    haloGeo.setAttribute('aSeed',    new THREE.BufferAttribute(haloSeed, 1));
+    const haloMat = mat.clone();
+    haloMat.uniforms = mat.uniforms; // share uniforms
+    const halo = new THREE.Points(haloGeo, haloMat);
+    halo.rotation.x = 0.45;
+    scene.add(halo);
+
+    // Core glow (additive sprite)
+    const coreGlowMat = new THREE.SpriteMaterial({
+      map: tex,
+      color: new THREE.Color(palette.coreGlow),
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      opacity: 0.18,
+    });
+    const coreGlow = new THREE.Sprite(coreGlowMat);
+    coreGlow.scale.set(4.5, 4.5, 1);
+    scene.add(coreGlow);
+
+    const innerGlowMat = new THREE.SpriteMaterial({
+      map: tex,
+      color: new THREE.Color(palette.innerGlow),
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      opacity: 0.28,
+    });
+    const innerGlow = new THREE.Sprite(innerGlowMat);
+    innerGlow.scale.set(1.4, 1.4, 1);
+    scene.add(innerGlow);
+
+    // Animation loop
+    let rafId;
+    const clock = new THREE.Clock();
+    const st = stateRef.current;
+
+    function animate() {
+      const dt = clock.getDelta();
+      st.time += dt;
+
+      // breathing wave (9.5s period)
+      const breath = 0.5 + 0.5 * Math.sin(st.time * (Math.PI * 2 / 9.5));
+
+      // excitement easing
+      st.excite += (st.targetExcite - st.excite) * Math.min(dt * 4, 1);
+
+      // rotation speed: idle 0.04 → excited 0.18 (rad/s) — 50% slower
+      const targetSpeed = 0.04 + st.excite * 0.14;
+      st.rotSpeed += (targetSpeed - st.rotSpeed) * Math.min(dt * 2.5, 1);
+      st.rot += st.rotSpeed * dt;
+
+      points.rotation.y = st.rot;
+      halo.rotation.y = st.rot * 0.4;
+
+      // uniforms
+      mat.uniforms.uTime.value = st.time;
+      mat.uniforms.uBreath.value = breath;
+      mat.uniforms.uExcite.value = st.excite;
+
+      // core sprite scaling/opacity
+      const cs = 4.0 + breath * 0.5 + st.excite * 1.4;
+      coreGlow.scale.set(cs, cs, 1);
+      coreGlowMat.opacity = 0.10 + breath * 0.05 + st.excite * 0.18;
+
+      const is = 1.2 + breath * 0.18 + st.excite * 0.5;
+      innerGlow.scale.set(is, is, 1);
+      innerGlowMat.opacity = 0.22 + breath * 0.08 + st.excite * 0.18;
+
+      renderer.render(scene, camera);
+      rafId = requestAnimationFrame(animate);
+    }
+    animate();
+
+    // cleanup
+    return () => {
+      cancelAnimationFrame(rafId);
+      renderer.dispose();
+      galaxyGeo.dispose();
+      haloGeo.dispose();
+      mat.dispose();
+      haloMat.dispose();
+      coreGlowMat.dispose();
+      innerGlowMat.dispose();
+      tex.dispose();
+      if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
+    };
+  }, [size, density, palette.core, palette.mid, palette.outer, palette.deep, palette.coreGlow, palette.innerGlow]);
+
+  // Set target excite from React state
+  useEffect(() => {
+    stateRef.current.targetExcite = pressed ? 1.0 : hover ? 0.55 : 0;
+  }, [hover, pressed]);
+
+  return (
+    <div
+      ref={mountRef}
+      style={{
+        width: size, height: size,
+        display: 'inline-block',
+        cursor: 'pointer',
+        position: 'relative',
+      }}
+      onMouseEnter={() => { setHover(true);  onHover && onHover(true);  }}
+      onMouseLeave={() => { setHover(false); setPressed(false); onHover && onHover(false); onPress && onPress(false); }}
+      onMouseDown={() => { setPressed(true);  onPress && onPress(true);  }}
+      onMouseUp={()   => { setPressed(false); onPress && onPress(false); }}
+      onClick={() => onLaunch && onLaunch()}
+    />
+  );
+}
+
+window.JarvisCore = JarvisCore;
+
+</script>
+<script type="text/babel" data-presets="react">
+(function mountJarvis() {
+  if (!window.JarvisCore || !window.THREE) {
+    setTimeout(mountJarvis, 50);
+    return;
+  }
+  const mount = document.getElementById('galaxy-mount');
+  if (!mount) return;
+
+  function sizePx() {
+    const r = mount.getBoundingClientRect();
+    return Math.max(160, Math.min(r.width, r.height));
+  }
+
+  function Wrapper() {
+    const [size, setSize] = React.useState(sizePx());
+    React.useEffect(() => {
+      const ro = new ResizeObserver(() => setSize(sizePx()));
+      ro.observe(mount);
+      return () => ro.disconnect();
+    }, []);
+    return (
+      <window.JarvisCore
+        size={size}
+        density={1.0}
+        palette={{
+          core:      '#e8f4ff',
+          mid:       '#8cc0e8',
+          outer:     '#3870a8',
+          deep:      '#0a1828',
+          coreGlow:  '#c8e4ff',
+          innerGlow: '#e8f4ff',
+          halo:      { r: 0.55, g: 0.70, b: 0.88 },
+        }}
+      />
+    );
+  }
+
+  const root = ReactDOM.createRoot(mount);
+  root.render(<Wrapper />);
+})();
+</script>
+</body></html>
