@@ -377,15 +377,15 @@ body::after {
     </div>
   </div>
 
-  <div class="tool-node" id="node-ida" data-id="ida" data-pos="bottom" style="left:50%; top:82%;">
+  <div class="tool-node" id="node-oreo" data-id="oreo" data-pos="bottom" style="left:50%; top:82%;">
     <div class="tool-card">
       <div class="tool-pip"></div>
-      <div class="tool-name">IDA</div>
-      <div class="tool-subtitle">統包估價</div>
+      <div class="tool-name">OREO</div>
+      <div class="tool-subtitle">訂購系統</div>
       <div class="tool-desc">TURNKEY ESTIMATOR</div>
     </div>
     <div class="tool-detail">
-      <div style="color:var(--amber);margin-bottom:5px;font-size:9px;">IDA MODULE</div>
+      <div style="color:var(--amber);margin-bottom:5px;font-size:9px;">OREO MODULE</div>
       <div>▸ FULL PACKAGE COSTING</div>
       <div>▸ INTEGRATED WORKFLOW</div>
       <div>▸ TOTAL SOLUTION OUTPUT</div>
@@ -425,7 +425,7 @@ body::after {
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "elsa_url": "https://elsa20.vercel.app/",
   "chef_url": "https://chef-system-ten.vercel.app/",
-  "ida_url": "https://ida-system-teal.vercel.app/",
+  "oreo_url": "https://oreo-ten.vercel.app/login",
   "worker_url": "https://worker-system-dusky.vercel.app/",
   "link_target": "_blank"
 }/*EDITMODE-END*/;
@@ -435,7 +435,7 @@ const config = { ...TWEAK_DEFAULTS };
 const TOOLS = {
   elsa:   { url: () => config.elsa_url   || '#', angle: 270 },
   chef:   { url: () => config.chef_url   || '#', angle: 0   },
-  ida:    { url: () => config.ida_url    || '#', angle: 90  },
+  oreo:   { url: () => config.oreo_url   || '#', angle: 90  },
   worker: { url: () => config.worker_url || '#', angle: 180 },
 };
 
@@ -715,7 +715,7 @@ updateClock();
       }, 150);
 
       // Phase 5: show nodes
-      const nodes = ['elsa','chef','ida','worker'];
+      const nodes = ['elsa','chef','oreo','worker'];
       nodes.forEach((id, i) => {
         setTimeout(() => {
           document.getElementById(`node-${id}`).classList.add('visible');
