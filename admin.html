@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>使用者管理 · STANDO</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: #F9F9F9;
+      color: #171A20;
+      min-height: 100vh;
+    }
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #EEEEEE;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar .title { font-size: 15px; font-weight: 600; }
+    .topbar a, .topbar button {
+      font-size: 12px; color: #5C5E62; text-decoration: none;
+      background: none; border: none; cursor: pointer;
+    }
+    .topbar a:hover, .topbar button:hover { color: #171A20; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px; }
+
+    .state { text-align: center; color: #5C5E62; font-size: 14px; padding: 80px 24px; }
+
+    table { width: 100%; background: #fff; border: 1px solid #EEEEEE; border-radius: 8px; border-collapse: collapse; overflow: hidden; }
+    th, td { text-align: left; padding: 11px 14px; font-size: 13px; border-top: 1px solid #EEEEEE; }
+    th { background: #F9F9F9; color: #5C5E62; font-weight: 500; font-size: 12px; border-top: none; }
+    td.muted { color: #B0B2B5; }
+    .badge {
+      display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 3px;
+      background: #EEF2FC; color: #3E6AE1;
+    }
+    .badge.off { background: #FBE9E7; color: #d93025; }
+    .roles span { margin-right: 4px; font-size: 11px; color: #5C5E62; }
+    .btn-edit {
+      font-size: 12px; color: #393C41; border: 1px solid #D0D1D2;
+      background: #fff; border-radius: 4px; padding: 4px 12px; cursor: pointer;
+    }
+    .btn-edit:hover { background: #F4F4F4; }
+    .inactive td { opacity: .5; }
+
+    /* modal */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .overlay.hide { display: none; }
+    .modal { background: #fff; border-radius: 8px; width: 100%; max-width: 420px; max-height: 88vh; overflow-y: auto; }
+    .modal .head { position: sticky; top: 0; background: #fff; border-bottom: 1px solid #EEEEEE; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .modal .head h2 { font-size: 14px; font-weight: 600; word-break: break-all; }
+    .modal .head .x { font-size: 22px; color: #8E8E8E; cursor: pointer; line-height: 1; background: none; border: none; }
+    .modal .body { padding: 20px; }
+    label { display: block; font-size: 12px; color: #5C5E62; margin: 0 0 6px; }
+    .field { margin-bottom: 14px; }
+    input[type=text], select {
+      width: 100%; border: 1px solid #D0D1D2; border-radius: 4px;
+      padding: 8px 10px; font-size: 13px; outline: none; background: #fff;
+    }
+    input:focus, select:focus { border-color: #3E6AE1; }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #171A20; }
+    .check input { width: auto; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .msg { font-size: 12px; margin: 4px 0 12px; }
+    .msg.err { color: #d93025; }
+    .actions { display: flex; gap: 8px; justify-content: flex-end; padding-top: 4px; }
+    .actions button { font-size: 13px; border-radius: 4px; padding: 8px 16px; cursor: pointer; }
+    .actions .cancel { background: #fff; border: 1px solid #D0D1D2; color: #393C41; }
+    .actions .save { background: #3E6AE1; border: none; color: #fff; }
+    .actions .save:disabled { opacity: .4; cursor: not-allowed; }
+    .hint { font-size: 11px; color: #B0B2B5; margin-top: 16px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <span class="title">STANDO · 使用者管理</span>
+    <span>
+      <a href="index.html">← 返回首頁</a>
+    </span>
+  </div>
+
+  <div class="wrap">
+    <div id="state" class="state">載入中⋯</div>
+    <div id="content" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th>暱稱</th><th>Email</th><th>部門</th>
+            <th>ELSA</th><th>CHEF</th><th>Worker</th><th>OREO</th><th>狀態</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <p class="hint">
+        詞彙統一（ELSA/CHEF/Worker）：owner 擁有者 · admin 管理員 · worker 作業員 · user 一般 · guest 訪客。<br>
+        OREO 為流程角色：admin 管理員 · office 辦公室 · warehouse 倉管 · factory 工廠。<br>
+        停用帳號（取消啟用）會一次擋掉所有系統。
+      </p>
+    </div>
+  </div>
+
+  <!-- 編輯彈窗 -->
+  <div class="overlay hide" id="overlay">
+    <div class="modal">
+      <div class="head">
+        <h2 id="m-title"></h2>
+        <button class="x" id="m-close">×</button>
+      </div>
+      <div class="body">
+        <div class="field">
+          <label>暱稱</label>
+          <input type="text" id="m-name" placeholder="例：小明" />
+        </div>
+        <div class="field">
+          <label>部門</label>
+          <input type="text" id="m-dept" placeholder="例：業務" />
+        </div>
+        <div class="field grid2">
+          <div>
+            <label>ELSA 權限</label>
+            <select id="m-elsa"></select>
+          </div>
+          <div>
+            <label>CHEF 權限</label>
+            <select id="m-chef"></select>
+          </div>
+        </div>
+        <div class="field grid2">
+          <div>
+            <label>Worker 權限</label>
+            <select id="m-worker"></select>
+          </div>
+          <div>
+            <label>OREO 權限</label>
+            <select id="m-oreo"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="check"><input type="checkbox" id="m-active" /> 帳號啟用中</label>
+        </div>
+        <div class="msg err hide" id="m-err"></div>
+        <div class="actions">
+          <button class="cancel" id="m-cancel">取消</button>
+          <button class="save" id="m-save">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://jpzgueafidiwmdosivxa.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_OykvT-gPYbdkKacJjzkzbw_FQOi68x8';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const $ = (id) => document.getElementById(id);
+
+    const STD_ROLES  = ['', 'owner', 'admin', 'worker', 'user', 'guest'];
+    const OREO_ROLES = ['', 'admin', 'office', 'warehouse', 'factory'];
+    const ROLE_LABEL = {
+      '': '（無權限）', owner: 'owner（擁有者）', admin: 'admin（管理員）',
+      worker: 'worker（作業員）', user: 'user（一般）', guest: 'guest（訪客）',
+      office: 'office（辦公室）', warehouse: 'warehouse（倉管）', factory: 'factory（工廠）',
+    };
+
+    function fillSelect(sel, opts) {
+      sel.innerHTML = '';
+      opts.forEach(v => {
+        const o = document.createElement('option');
+        o.value = v; o.textContent = ROLE_LABEL[v];
+        sel.appendChild(o);
+      });
+    }
+    fillSelect($('m-elsa'), STD_ROLES);
+    fillSelect($('m-chef'), STD_ROLES);
+    fillSelect($('m-worker'), STD_ROLES);
+    fillSelect($('m-oreo'), OREO_ROLES);
+
+    let users = [];      // 合併後的使用者清單
+    let editing = null;  // 正在編輯的 user
+
+    // ── 進場：登入 + owner 檢查 ──
+    init();
+    async function init() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { location.replace('index.html'); return; }
+      const { data: me } = await sb.from('profiles').select('tool_roles').eq('id', session.user.id).maybeSingle();
+      const isOwner = me && me.tool_roles && Object.values(me.tool_roles).includes('owner');
+      if (!isOwner) { $('state').textContent = '此頁僅限管理者（任一系統 owner）使用。'; return; }
+      await load();
+    }
+
+    async function load() {
+      $('state').style.display = ''; $('state').textContent = '載入中⋯';
+      $('content').style.display = 'none';
+      // list_users() 拿 email/暱稱/部門/角色；profiles 拿 is_active 合併
+      const [{ data: rpcRows, error: e1 }, { data: profRows, error: e2 }] = await Promise.all([
+        sb.rpc('list_users'),
+        sb.from('profiles').select('id, is_active'),
+      ]);
+      if (e1) { $('state').textContent = '載入失敗：' + e1.message; return; }
+      const activeMap = {};
+      (profRows || []).forEach(p => { activeMap[p.id] = p.is_active; });
+      users = (rpcRows || []).map(u => ({
+        ...u,
+        tool_roles: u.tool_roles || {},
+        is_active: activeMap[u.id] !== false, // 預設視為啟用
+      }));
+      render();
+      $('state').style.display = 'none';
+      $('content').style.display = '';
+    }
+
+    function roleCell(r) {
+      return r ? '<span class="badge">' + r + '</span>' : '<span class="muted">—</span>';
+    }
+
+    function render() {
+      const tb = $('rows');
+      tb.innerHTML = '';
+      if (!users.length) { tb.innerHTML = '<tr><td colspan="9" class="muted" style="text-align:center;padding:30px">暫無資料</td></tr>'; return; }
+      users.forEach((u, i) => {
+        const tr = document.createElement('tr');
+        if (!u.is_active) tr.className = 'inactive';
+        tr.innerHTML =
+          '<td>' + (u.display_name || '<span class="muted">—</span>') + '</td>' +
+          '<td>' + (u.email || '<span class="muted">—</span>') + '</td>' +
+          '<td>' + (u.department || '<span class="muted">—</span>') + '</td>' +
+          '<td>' + roleCell(u.tool_roles.elsa) + '</td>' +
+          '<td>' + roleCell(u.tool_roles.chef) + '</td>' +
+          '<td>' + roleCell(u.tool_roles.worker) + '</td>' +
+          '<td>' + roleCell(u.tool_roles.oreo) + '</td>' +
+          '<td>' + (u.is_active ? '<span class="badge">啟用</span>' : '<span class="badge off">停用</span>') + '</td>' +
+          '<td style="text-align:right"><button class="btn-edit" data-i="' + i + '">編輯</button></td>';
+        tb.appendChild(tr);
+      });
+      tb.querySelectorAll('.btn-edit').forEach(b => {
+        b.addEventListener('click', () => openEdit(users[+b.dataset.i]));
+      });
+    }
+
+    function openEdit(u) {
+      editing = u;
+      $('m-title').textContent = u.email || u.display_name || '使用者';
+      $('m-name').value = u.display_name || '';
+      $('m-dept').value = u.department || '';
+      $('m-elsa').value = u.tool_roles.elsa || '';
+      $('m-chef').value = u.tool_roles.chef || '';
+      $('m-worker').value = u.tool_roles.worker || '';
+      $('m-oreo').value = u.tool_roles.oreo || '';
+      $('m-active').checked = u.is_active;
+      $('m-err').classList.add('hide');
+      $('overlay').classList.remove('hide');
+    }
+    function closeEdit() { $('overlay').classList.add('hide'); editing = null; }
+    $('m-close').addEventListener('click', closeEdit);
+    $('m-cancel').addEventListener('click', closeEdit);
+    $('overlay').addEventListener('click', (e) => { if (e.target === $('overlay')) closeEdit(); });
+
+    $('m-save').addEventListener('click', async () => {
+      if (!editing) return;
+      $('m-err').classList.add('hide');
+      // 保留未在此頁管理的其他 tool_roles key，只覆寫這四個
+      const roles = { ...editing.tool_roles };
+      const set = (tool, v) => { if (v) roles[tool] = v; else delete roles[tool]; };
+      set('elsa', $('m-elsa').value);
+      set('chef', $('m-chef').value);
+      set('worker', $('m-worker').value);
+      set('oreo', $('m-oreo').value);
+
+      const btn = $('m-save');
+      btn.disabled = true; btn.textContent = '儲存中⋯';
+      const { error } = await sb.from('profiles').update({
+        display_name: $('m-name').value.trim() || null,
+        department: $('m-dept').value.trim() || null,
+        tool_roles: roles,
+        is_active: $('m-active').checked,
+        updated_at: new Date().toISOString(),
+      }).eq('id', editing.id);
+      btn.disabled = false; btn.textContent = '儲存';
+      if (error) { const e = $('m-err'); e.textContent = '儲存失敗：' + error.message; e.classList.remove('hide'); return; }
+
+      // 更新本地資料並重畫
+      editing.display_name = $('m-name').value.trim() || null;
+      editing.department = $('m-dept').value.trim() || null;
+      editing.tool_roles = roles;
+      editing.is_active = $('m-active').checked;
+      render();
+      closeEdit();
+    });
+  </script>
+</body>
+</html>

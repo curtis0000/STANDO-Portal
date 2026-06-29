@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>帳號設定 · STANDO</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: #F9F9F9;
+      color: #171A20;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card { width: 100%; max-width: 340px; }
+    h1 { font-size: 22px; font-weight: 600; text-align: center; margin-bottom: 4px; }
+    .sub { font-size: 13px; color: #5C5E62; text-align: center; margin-bottom: 28px; word-break: break-all; }
+    .step-title { font-size: 15px; font-weight: 500; margin-bottom: 16px; }
+    label { display: block; font-size: 12px; color: #5C5E62; margin-bottom: 6px; }
+    input {
+      width: 100%;
+      border: 1px solid #D0D1D2;
+      border-radius: 4px;
+      padding: 10px 12px;
+      font-size: 14px;
+      margin-bottom: 14px;
+      outline: none;
+    }
+    input:focus { border-color: #3E6AE1; }
+    button {
+      width: 100%;
+      padding: 11px;
+      background: #3E6AE1;
+      color: #fff;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    button:hover:not(:disabled) { background: #2d57c4; }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    .msg { font-size: 12px; margin-bottom: 12px; line-height: 1.5; }
+    .msg.err { color: #d93025; }
+    .msg.ok { color: #188038; }
+    .link {
+      display: block;
+      text-align: center;
+      font-size: 12px;
+      color: #5C5E62;
+      margin-top: 18px;
+      text-decoration: none;
+    }
+    .link:hover { color: #3E6AE1; }
+    .hide { display: none; }
+    .loading { text-align: center; font-size: 13px; color: #5C5E62; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div id="loading" class="loading">載入中⋯</div>
+
+    <div id="main" class="hide">
+      <h1>帳號設定</h1>
+      <p class="sub" id="email"></p>
+
+      <form id="form-pass">
+        <p class="step-title">變更密碼</p>
+        <label>新密碼（至少 6 個字元）</label>
+        <input type="password" id="pass1" placeholder="新密碼" required autocomplete="new-password" />
+        <label>再次輸入</label>
+        <input type="password" id="pass2" placeholder="再次輸入新密碼" required autocomplete="new-password" />
+        <div class="msg err hide" id="err"></div>
+        <div class="msg ok hide" id="ok"></div>
+        <button type="submit" id="btn">更新密碼</button>
+      </form>
+
+      <a class="link" href="index.html">← 返回首頁</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://jpzgueafidiwmdosivxa.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_OykvT-gPYbdkKacJjzkzbw_FQOi68x8';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const $ = (id) => document.getElementById(id);
+
+    // 需先登入，否則導回首頁
+    sb.auth.getSession().then(({ data }) => {
+      if (!data.session) { location.replace('index.html'); return; }
+      $('email').textContent = data.session.user.email;
+      $('loading').classList.add('hide');
+      $('main').classList.remove('hide');
+    });
+
+    $('form-pass').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('err').classList.add('hide'); $('ok').classList.add('hide');
+      const p1 = $('pass1').value, p2 = $('pass2').value;
+      if (p1.length < 6) { showErr('密碼至少需要 6 個字元'); return; }
+      if (p1 !== p2) { showErr('兩次輸入的密碼不相符'); return; }
+
+      const btn = $('btn');
+      btn.disabled = true; btn.textContent = '儲存中⋯';
+      const { error } = await sb.auth.updateUser({ password: p1 });
+      btn.disabled = false; btn.textContent = '更新密碼';
+      if (error) { showErr('更新失敗：' + error.message); return; }
+
+      $('pass1').value = ''; $('pass2').value = '';
+      const ok = $('ok'); ok.textContent = '密碼已更新'; ok.classList.remove('hide');
+    });
+
+    function showErr(text) { const e = $('err'); e.textContent = text; e.classList.remove('hide'); }
+  </script>
+</body>
+</html>

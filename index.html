@@ -10,6 +10,7 @@
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -317,6 +318,105 @@ body::after {
   opacity: 0;
 }
 
+/* ── Auth widget (top-right) ── */
+#auth-widget {
+  position: fixed;
+  top: 60px; right: 24px;
+  z-index: 950;
+  font-family: var(--font-hud);
+  text-align: right;
+  cursor: default;
+}
+#auth-trigger {
+  background: rgba(10, 8, 5, 0.72);
+  border: 1px solid var(--line);
+  color: var(--text-brand);
+  font-family: var(--font-hud);
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+  max-width: 220px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#auth-trigger:hover { border-color: var(--line-hi); color: var(--text-hi); }
+#auth-trigger .caret { color: var(--amber); margin-left: 6px; }
+.auth-panel {
+  margin-top: 6px;
+  width: 230px;
+  background: rgba(10, 8, 5, 0.92);
+  border: 1px solid var(--line);
+  padding: 14px;
+  text-align: left;
+  backdrop-filter: blur(2px);
+}
+.auth-panel.hidden, #auth-trigger.hidden { display: none; }
+.auth-panel label {
+  display: block;
+  font-size: 9px; letter-spacing: 1px;
+  color: var(--text-lo); margin-bottom: 4px;
+}
+.auth-panel input {
+  width: 100%;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--line);
+  color: var(--text-hi);
+  font-family: var(--font-hud);
+  font-size: 12px;
+  padding: 7px 9px;
+  margin-bottom: 10px;
+  outline: none;
+  cursor: text; user-select: text;
+}
+.auth-panel input:focus { border-color: var(--line-hi); }
+.auth-panel button.primary {
+  width: 100%;
+  background: var(--amber-lo);
+  border: 1px solid var(--amber);
+  color: var(--text-hi);
+  font-family: var(--font-hud);
+  font-size: 11px; letter-spacing: 1px;
+  padding: 8px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.auth-panel button.primary:hover:not(:disabled) { background: var(--amber); }
+.auth-panel button.primary:disabled { opacity: .45; cursor: not-allowed; }
+.auth-msg { font-size: 10px; line-height: 1.5; margin-bottom: 8px; }
+.auth-msg.err { color: #E0786A; }
+.auth-msg.ok  { color: var(--amber-hi); }
+.auth-links { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.auth-links a, #auth-user-panel a {
+  font-size: 10px; letter-spacing: 1px;
+  color: var(--text-lo);
+  text-decoration: none;
+  transition: color .15s;
+}
+.auth-links a:hover, #auth-user-panel a:hover { color: var(--amber-hi); }
+#auth-user-panel .uname {
+  font-size: 11px; color: var(--text-brand);
+  word-break: break-all; margin-bottom: 4px;
+}
+#auth-user-panel .urole {
+  font-size: 9px; color: var(--text-lo);
+  letter-spacing: 1px; margin-bottom: 12px;
+}
+#auth-user-panel .row {
+  display: flex; flex-direction: column; gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+#auth-user-panel button.logout {
+  background: none; border: none;
+  color: var(--text-lo);
+  font-family: var(--font-hud);
+  font-size: 10px; letter-spacing: 1px;
+  text-align: left; padding: 0; cursor: pointer;
+  transition: color .15s;
+}
+#auth-user-panel button.logout:hover { color: #E0786A; }
+
 </style>
 </head>
 <body>
@@ -419,6 +519,36 @@ body::after {
 
 <!-- Status bar -->
 <div id="status-bar">HOVER MODULE TO IDENTIFY &nbsp;◈&nbsp; CLICK TO LAUNCH</div>
+
+<!-- Auth widget (top-right) -->
+<div id="auth-widget">
+  <button id="auth-trigger" class="hidden"><span id="auth-trigger-text">登入</span><span class="caret">▾</span></button>
+
+  <!-- 登出狀態：登入表單 -->
+  <form id="auth-login-panel" class="auth-panel hidden">
+    <label>EMAIL</label>
+    <input type="email" id="auth-email" autocomplete="username" required />
+    <label>PASSWORD</label>
+    <input type="password" id="auth-pass" autocomplete="current-password" required />
+    <div class="auth-msg err hidden" id="auth-err"></div>
+    <button type="submit" class="primary" id="auth-login-btn">登入</button>
+    <div class="auth-links">
+      <a href="register.html">▸ 申請帳號</a>
+      <a href="reset.html">▸ 忘記密碼</a>
+    </div>
+  </form>
+
+  <!-- 登入狀態：帳號選單 -->
+  <div id="auth-user-panel" class="auth-panel hidden">
+    <div class="uname" id="auth-uname"></div>
+    <div class="urole" id="auth-urole"></div>
+    <div class="row">
+      <a href="account.html">▸ 帳號設定</a>
+      <a href="admin.html" id="auth-admin-link" style="display:none">▸ 使用者管理</a>
+      <button type="button" class="logout" id="auth-logout-btn">▸ 登出</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
@@ -1132,6 +1262,92 @@ window.JarvisCore = JarvisCore;
 
   const root = ReactDOM.createRoot(mount);
   root.render(<Wrapper />);
+})();
+</script>
+
+<!-- ── Auth widget logic ── -->
+<script>
+(function () {
+  const SUPABASE_URL = 'https://jpzgueafidiwmdosivxa.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_OykvT-gPYbdkKacJjzkzbw_FQOi68x8';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const $ = (id) => document.getElementById(id);
+  const trigger    = $('auth-trigger');
+  const triggerTxt = $('auth-trigger-text');
+  const loginPanel = $('auth-login-panel');
+  const userPanel  = $('auth-user-panel');
+
+  let open = false;
+  function setOpen(v) {
+    open = v;
+    const loggedIn = !userPanel.dataset.empty;
+    loginPanel.classList.toggle('hidden', !open || loggedIn);
+    userPanel.classList.toggle('hidden', !open || !loggedIn);
+  }
+
+  trigger.addEventListener('click', (e) => { e.stopPropagation(); setOpen(!open); });
+  document.addEventListener('click', (e) => {
+    if (open && !$('auth-widget').contains(e.target)) setOpen(false);
+  });
+
+  // 渲染登入 / 登出兩種狀態
+  function renderLoggedOut() {
+    userPanel.dataset.empty = '1';
+    triggerTxt.textContent = '登入';
+    trigger.classList.remove('hidden');
+    setOpen(false);
+  }
+
+  async function renderLoggedIn(user) {
+    delete userPanel.dataset.empty;
+    // 讀 profile：顯示名稱 + 是否任一工具 owner（決定使用者管理連結）
+    let name = user.email, roles = {};
+    const { data } = await sb.from('profiles').select('display_name, tool_roles').eq('id', user.id).maybeSingle();
+    if (data) {
+      name = data.display_name || user.email;
+      roles = data.tool_roles || {};
+    }
+    $('auth-uname').textContent = name;
+    const roleList = Object.entries(roles).map(([t, r]) => `${t}:${r}`).join('  ');
+    $('auth-urole').textContent = roleList || '尚無權限';
+    const isOwner = Object.values(roles).includes('owner');
+    $('auth-admin-link').style.display = isOwner ? '' : 'none';
+    triggerTxt.textContent = name;
+    trigger.classList.remove('hidden');
+  }
+
+  // 登入
+  loginPanel.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    $('auth-err').classList.add('hidden');
+    const email = $('auth-email').value.trim().toLowerCase();
+    const password = $('auth-pass').value;
+    const btn = $('auth-login-btn');
+    btn.disabled = true; btn.textContent = '驗證中⋯';
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    btn.disabled = false; btn.textContent = '登入';
+    if (error) {
+      const el = $('auth-err');
+      el.textContent = '登入失敗，請確認帳號密碼';
+      el.classList.remove('hidden');
+      return;
+    }
+    $('auth-pass').value = '';
+  });
+
+  // 登出
+  $('auth-logout-btn').addEventListener('click', async () => {
+    await sb.auth.signOut();
+  });
+
+  // 監聽登入狀態
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session) renderLoggedIn(data.session.user); else renderLoggedOut();
+  });
+  sb.auth.onAuthStateChange((_event, session) => {
+    if (session) renderLoggedIn(session.user); else renderLoggedOut();
+  });
 })();
 </script>
 </body></html>
