@@ -72,6 +72,7 @@ a { color: inherit; text-decoration: none; }
 .g-rose    { --from: #ef4444; --to: #fb7185; }
 .g-blue    { --from: #6366f1; --to: #60a5fa; }
 .g-slate   { --from: #0f172a; --to: #334155; }
+.g-violet  { --from: #7c3aed; --to: #c084fc; }
 
 .foot { margin-top: 48px; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
 
@@ -191,6 +192,13 @@ a { color: inherit; text-decoration: none; }
         <span class="btn">開啟 →</span>
       </div>
     </a>
+    <a class="card g-violet" data-url="questboard_url">
+      <div class="overlay"></div><div class="light"></div><div class="glyph">D</div>
+      <div class="body">
+        <div><div class="cat">Design・設計</div><h2>QUESTBOARD 設計進度板</h2><div class="sub">兩位設計師的排隊與兩週日曆</div></div>
+        <span class="btn">開啟 →</span>
+      </div>
+    </a>
   </div>
 
   <div class="foot"><span>STANDO SYSTEMS v3.0</span><span id="clock-label"></span></div>
@@ -204,6 +212,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "oreo_url": "https://oreo-ten.vercel.app/login",
   "worker_url": "https://worker-system-dusky.vercel.app/",
   "factory_url": "https://factoryboard-bice.vercel.app/",
+  "questboard_url": "https://questboard-psi.vercel.app/",
   "link_target": "_blank"
 }/*EDITMODE-END*/;
 const config = { ...TWEAK_DEFAULTS };

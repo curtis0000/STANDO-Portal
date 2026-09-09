@@ -90,7 +90,7 @@
         <thead>
           <tr>
             <th>暱稱</th><th>Email</th><th>部門</th>
-            <th>ELSA</th><th>CHEF</th><th>Worker</th><th>OREO</th><th>狀態</th><th></th>
+            <th>ELSA</th><th>CHEF</th><th>Worker</th><th>OREO</th><th>Questboard</th><th>狀態</th><th></th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -98,6 +98,7 @@
       <p class="hint">
         詞彙統一（ELSA/CHEF/Worker）：owner 擁有者 · admin 管理員 · worker 作業員 · user 一般 · guest 訪客。<br>
         OREO 為流程角色：admin 管理員 · office 辦公室 · warehouse 倉管 · factory 工廠。<br>
+        Questboard（設計進度板）只有兩種：owner 可核准順序調整 · user 其餘操作。<br>
         停用帳號（取消啟用）會一次擋掉所有系統。
       </p>
     </div>
@@ -139,6 +140,12 @@
             <select id="m-oreo"></select>
           </div>
         </div>
+        <div class="field grid2">
+          <div>
+            <label>Questboard 權限</label>
+            <select id="m-questboard"></select>
+          </div>
+        </div>
         <div class="field">
           <label class="check"><input type="checkbox" id="m-active" /> 帳號啟用中</label>
         </div>
@@ -160,6 +167,7 @@
 
     const STD_ROLES  = ['', 'owner', 'admin', 'worker', 'user', 'guest'];
     const OREO_ROLES = ['', 'admin', 'office', 'warehouse', 'factory'];
+    const QUESTBOARD_ROLES = ['', 'owner', 'user'];
     const ROLE_LABEL = {
       '': '（無權限）', owner: 'owner（擁有者）', admin: 'admin（管理員）',
       worker: 'worker（作業員）', user: 'user（一般）', guest: 'guest（訪客）',
@@ -178,6 +186,7 @@
     fillSelect($('m-chef'), STD_ROLES);
     fillSelect($('m-worker'), STD_ROLES);
     fillSelect($('m-oreo'), OREO_ROLES);
+    fillSelect($('m-questboard'), QUESTBOARD_ROLES);
 
     let users = [];      // 合併後的使用者清單
     let editing = null;  // 正在編輯的 user
@@ -233,6 +242,7 @@
           '<td>' + roleCell(u.tool_roles.chef) + '</td>' +
           '<td>' + roleCell(u.tool_roles.worker) + '</td>' +
           '<td>' + roleCell(u.tool_roles.oreo) + '</td>' +
+          '<td>' + roleCell(u.tool_roles.questboard) + '</td>' +
           '<td>' + (u.is_active ? '<span class="badge">啟用</span>' : '<span class="badge off">停用</span>') + '</td>' +
           '<td style="text-align:right"><button class="btn-edit" data-i="' + i + '">編輯</button></td>';
         tb.appendChild(tr);
@@ -251,6 +261,7 @@
       $('m-chef').value = u.tool_roles.chef || '';
       $('m-worker').value = u.tool_roles.worker || '';
       $('m-oreo').value = u.tool_roles.oreo || '';
+      $('m-questboard').value = u.tool_roles.questboard || '';
       $('m-active').checked = u.is_active;
       $('m-err').classList.add('hide');
       $('overlay').classList.remove('hide');
@@ -263,13 +274,14 @@
     $('m-save').addEventListener('click', async () => {
       if (!editing) return;
       $('m-err').classList.add('hide');
-      // 保留未在此頁管理的其他 tool_roles key，只覆寫這四個
+      // 保留未在此頁管理的其他 tool_roles key，只覆寫這五個
       const roles = { ...editing.tool_roles };
       const set = (tool, v) => { if (v) roles[tool] = v; else delete roles[tool]; };
       set('elsa', $('m-elsa').value);
       set('chef', $('m-chef').value);
       set('worker', $('m-worker').value);
       set('oreo', $('m-oreo').value);
+      set('questboard', $('m-questboard').value);
 
       const btn = $('m-save');
       btn.disabled = true; btn.textContent = '儲存中⋯';
