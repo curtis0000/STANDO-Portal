@@ -98,7 +98,7 @@
       <p class="hint">
         詞彙統一（ELSA/CHEF/Worker）：owner 擁有者 · admin 管理員 · worker 作業員 · user 一般 · guest 訪客。<br>
         OREO 為流程角色：admin 管理員 · office 辦公室 · warehouse 倉管 · factory 工廠。<br>
-        Questboard（設計進度板）只有兩種：owner 可核准順序調整 · user 其餘操作。<br>
+        Questboard（設計進度板）：owner 可核准順序調整、看承諾日 · sales 業務看承諾日、不能核准 · user 設計師。<br>
         停用帳號（取消啟用）會一次擋掉所有系統。
       </p>
     </div>
@@ -167,11 +167,11 @@
 
     const STD_ROLES  = ['', 'owner', 'admin', 'worker', 'user', 'guest'];
     const OREO_ROLES = ['', 'admin', 'office', 'warehouse', 'factory'];
-    const QUESTBOARD_ROLES = ['', 'owner', 'user'];
+    const QUESTBOARD_ROLES = ['', 'owner', 'sales', 'user'];
     const ROLE_LABEL = {
       '': '（無權限）', owner: 'owner（擁有者）', admin: 'admin（管理員）',
       worker: 'worker（作業員）', user: 'user（一般）', guest: 'guest（訪客）',
-      office: 'office（辦公室）', warehouse: 'warehouse（倉管）', factory: 'factory（工廠）',
+      sales: 'sales（業務）', office: 'office（辦公室）', warehouse: 'warehouse（倉管）', factory: 'factory（工廠）',
     };
 
     function fillSelect(sel, opts) {
