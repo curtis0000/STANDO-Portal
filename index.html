@@ -73,6 +73,7 @@ a { color: inherit; text-decoration: none; }
 .g-blue    { --from: #6366f1; --to: #60a5fa; }
 .g-slate   { --from: #0f172a; --to: #334155; }
 .g-violet  { --from: #7c3aed; --to: #c084fc; }
+.g-teal    { --from: #0f766e; --to: #2dd4bf; }
 
 .foot { margin-top: 48px; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
 
@@ -199,6 +200,13 @@ a { color: inherit; text-decoration: none; }
         <span class="btn">開啟 →</span>
       </div>
     </a>
+    <a class="card g-teal" data-url="elsa3_url">
+      <div class="overlay"></div><div class="light"></div><div class="glyph">3</div>
+      <div class="body">
+        <div><div class="cat">Estimator・估價</div><h2>ELSA 3.0 畫布估價</h2><div class="sub">3D 畫布拉櫃體，直接出估價單與拆料表</div></div>
+        <span class="btn">開啟 →</span>
+      </div>
+    </a>
   </div>
 
   <div class="foot"><span>STANDO SYSTEMS v3.0</span><span id="clock-label"></span></div>
@@ -213,6 +221,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "worker_url": "https://worker-system-dusky.vercel.app/",
   "factory_url": "https://factoryboard-bice.vercel.app/",
   "questboard_url": "https://questboard-psi.vercel.app/",
+  "elsa3_url": "http://localhost:5181/",
   "link_target": "_blank"
 }/*EDITMODE-END*/;
 const config = { ...TWEAK_DEFAULTS };
