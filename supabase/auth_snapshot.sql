@@ -131,6 +131,6 @@ create policy questboard_app_select on public.profiles for select to authenticat
 --   ⚠️ 不看 profiles.is_active，所以 Portal 停用帳號擋不到工廠關卡
 --
 -- app_user 規則：
---   app_user_select                  所有登入者可讀（顯示「誰按的」）
+--   app_user_select                  有工廠角色或任一工具 owner 可讀（見 migrations/20260913000002）
 --   app_user_insert/update/delete    工廠關卡自己的 owner
 --   app_user_*_portal_owner          任一工具 owner（Portal 管理頁用，見 migrations/20260913000001）
