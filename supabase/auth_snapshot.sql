@@ -45,6 +45,8 @@ CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users
 
 
 -- ── 3. 權限函式（RLS 用）────────────────────────────────────────
+-- 執行權：只給 authenticated / service_role，未登入（anon）不能呼叫（migrations/20260913000003）
+-- 例外：worker.get_my_role 保留 anon，因 worker 各表規則 roles=public，收回會讓未登入查詢報錯
 
 -- 目前登入者在某工具的角色；帳號停用時回 NULL
 CREATE OR REPLACE FUNCTION public.current_tool_role(tool text)
