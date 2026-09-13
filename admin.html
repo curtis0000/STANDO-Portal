@@ -46,6 +46,10 @@
     }
     .btn-edit:hover { background: #F4F4F4; }
     .inactive td { opacity: .5; }
+    .pending td { background: #FFF8E1; }
+    .badge.wait { background: #FFE8A3; color: #8A5A00; }
+    .pending-bar { background: #FFF8E1; border: 1px solid #F3D98B; color: #8A5A00; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; }
+    .table-wrap { overflow-x: auto; }
 
     /* modal */
     .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; padding: 24px; }
@@ -86,20 +90,24 @@
   <div class="wrap">
     <div id="state" class="state">載入中⋯</div>
     <div id="content" style="display:none">
+      <div id="pending-bar" class="pending-bar" style="display:none"></div>
+      <div class="table-wrap">
       <table>
         <thead>
           <tr>
             <th>暱稱</th><th>Email</th><th>部門</th>
-            <th>ELSA</th><th>CHEF</th><th>Worker</th><th>OREO</th><th>Questboard</th><th>狀態</th><th></th>
+            <th>ELSA</th><th>CHEF</th><th>Worker</th><th>OREO</th><th>Questboard</th><th>工廠關卡</th><th>狀態</th><th></th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
       </table>
+      </div>
       <p class="hint">
-        詞彙統一（ELSA/CHEF/Worker）：owner 擁有者 · admin 管理員 · worker 作業員 · user 一般 · guest 訪客。<br>
+        詞彙統一（ELSA/CHEF/Worker）：owner 擁有者 · admin 管理員 · worker 作業員 · user 一般 · guest 訪客。ELSA 權限同時適用 2.0 與 3.0。<br>
         OREO 為流程角色：admin 管理員 · office 辦公室 · warehouse 倉管 · factory 工廠。<br>
         Questboard（設計進度板）：owner 可核准順序調整、看承諾日 · sales 業務看承諾日、不能核准 · user 設計師。<br>
-        停用帳號（取消啟用）會一次擋掉所有系統。
+        工廠關卡：owner 管理 · office 辦公室開單 · manager 廠長（指派、放行、接通知，不開單） · station 關卡人員（需選哪一關）。<br>
+        停用帳號（取消啟用）會一次擋掉所有系統，<strong>工廠關卡除外</strong>（它有自己的名單），要擋請把工廠關卡設成（無權限）。
       </p>
     </div>
   </div>
@@ -145,6 +153,14 @@
             <label>Questboard 權限</label>
             <select id="m-questboard"></select>
           </div>
+          <div>
+            <label>工廠關卡 權限</label>
+            <select id="m-factory"></select>
+          </div>
+        </div>
+        <div class="field" id="m-station-wrap" style="display:none">
+          <label>負責哪一關</label>
+          <select id="m-station"></select>
         </div>
         <div class="field">
           <label class="check"><input type="checkbox" id="m-active" /> 帳號啟用中</label>
@@ -168,10 +184,12 @@
     const STD_ROLES  = ['', 'owner', 'admin', 'worker', 'user', 'guest'];
     const OREO_ROLES = ['', 'admin', 'office', 'warehouse', 'factory'];
     const QUESTBOARD_ROLES = ['', 'owner', 'sales', 'user'];
+    const FACTORY_ROLES = ['', 'owner', 'office', 'manager', 'station'];
     const ROLE_LABEL = {
       '': '（無權限）', owner: 'owner（擁有者）', admin: 'admin（管理員）',
       worker: 'worker（作業員）', user: 'user（一般）', guest: 'guest（訪客）',
       sales: 'sales（業務）', office: 'office（辦公室）', warehouse: 'warehouse（倉管）', factory: 'factory（工廠）',
+      manager: 'manager（廠長）', station: 'station（關卡人員）',
     };
 
     function fillSelect(sel, opts) {
@@ -187,9 +205,16 @@
     fillSelect($('m-worker'), STD_ROLES);
     fillSelect($('m-oreo'), OREO_ROLES);
     fillSelect($('m-questboard'), QUESTBOARD_ROLES);
+    fillSelect($('m-factory'), FACTORY_ROLES);
+    $('m-factory').addEventListener('change', syncStation);
+    function syncStation() { $('m-station-wrap').style.display = $('m-factory').value === 'station' ? '' : 'none'; }
 
     let users = [];      // 合併後的使用者清單
+    let stations = [];   // 工廠關卡的關卡清單
     let editing = null;  // 正在編輯的 user
+
+    // 待開通 = 任何系統都沒有權限（含工廠關卡）
+    const isPending = (u) => !Object.keys(u.tool_roles).length && !u.factory;
 
     // ── 進場：登入 + owner 檢查 ──
     init();
@@ -206,18 +231,34 @@
       $('state').style.display = ''; $('state').textContent = '載入中⋯';
       $('content').style.display = 'none';
       // list_users() 拿 email/暱稱/部門/角色；profiles 拿 is_active 合併
-      const [{ data: rpcRows, error: e1 }, { data: profRows, error: e2 }] = await Promise.all([
+      // 工廠關卡角色不在 tool_roles，另外讀 factoryboard.app_user
+      const fb = sb.schema('factoryboard');
+      const [{ data: rpcRows, error: e1 }, { data: profRows, error: e2 }, { data: fbRows, error: e3 }, { data: stRows }] = await Promise.all([
         sb.rpc('list_users'),
         sb.from('profiles').select('id, is_active'),
+        fb.from('app_user').select('id, name, role, station_id'),
+        fb.from('station').select('id, name').order('sort_order'),
       ]);
       if (e1) { $('state').textContent = '載入失敗：' + e1.message; return; }
+      if (e3) { $('state').textContent = '載入工廠關卡名單失敗：' + e3.message; return; }
+      stations = stRows || [];
+      $('m-station').innerHTML = '';
+      stations.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.id; o.textContent = s.name;
+        $('m-station').appendChild(o);
+      });
       const activeMap = {};
       (profRows || []).forEach(p => { activeMap[p.id] = p.is_active; });
+      const fbMap = {};
+      (fbRows || []).forEach(r => { fbMap[r.id] = r; });
       users = (rpcRows || []).map(u => ({
         ...u,
         tool_roles: u.tool_roles || {},
         is_active: activeMap[u.id] !== false, // 預設視為啟用
+        factory: fbMap[u.id] || null,
       }));
+      users.sort((a, b) => isPending(b) - isPending(a)); // 待開通排最上面，其餘維持註冊順序
       render();
       $('state').style.display = 'none';
       $('content').style.display = '';
@@ -227,13 +268,23 @@
       return r ? '<span class="badge">' + r + '</span>' : '<span class="muted">—</span>';
     }
 
+    function factoryCell(f) {
+      if (!f) return '<span class="muted">—</span>';
+      const s = f.role === 'station' ? stations.find(x => x.id === f.station_id) : null;
+      return '<span class="badge">' + f.role + (s ? '·' + s.name : '') + '</span>';
+    }
+
     function render() {
       const tb = $('rows');
       tb.innerHTML = '';
-      if (!users.length) { tb.innerHTML = '<tr><td colspan="9" class="muted" style="text-align:center;padding:30px">暫無資料</td></tr>'; return; }
+      const n = users.filter(isPending).length;
+      $('pending-bar').style.display = n ? '' : 'none';
+      $('pending-bar').textContent = '待開通 ' + n + ' 人：還沒有任何系統權限，已排在最上面。按「編輯」設定權限即完成開通。';
+      if (!users.length) { tb.innerHTML = '<tr><td colspan="11" class="muted" style="text-align:center;padding:30px">暫無資料</td></tr>'; return; }
       users.forEach((u, i) => {
         const tr = document.createElement('tr');
         if (!u.is_active) tr.className = 'inactive';
+        else if (isPending(u)) tr.className = 'pending';
         tr.innerHTML =
           '<td>' + (u.display_name || '<span class="muted">—</span>') + '</td>' +
           '<td>' + (u.email || '<span class="muted">—</span>') + '</td>' +
@@ -243,7 +294,8 @@
           '<td>' + roleCell(u.tool_roles.worker) + '</td>' +
           '<td>' + roleCell(u.tool_roles.oreo) + '</td>' +
           '<td>' + roleCell(u.tool_roles.questboard) + '</td>' +
-          '<td>' + (u.is_active ? '<span class="badge">啟用</span>' : '<span class="badge off">停用</span>') + '</td>' +
+          '<td>' + factoryCell(u.factory) + '</td>' +
+          '<td>' + (!u.is_active ? '<span class="badge off">停用</span>' : isPending(u) ? '<span class="badge wait">待開通</span>' : '<span class="badge">啟用</span>') + '</td>' +
           '<td style="text-align:right"><button class="btn-edit" data-i="' + i + '">編輯</button></td>';
         tb.appendChild(tr);
       });
@@ -262,6 +314,15 @@
       $('m-worker').value = u.tool_roles.worker || '';
       $('m-oreo').value = u.tool_roles.oreo || '';
       $('m-questboard').value = u.tool_roles.questboard || '';
+      // 認不得的角色名（例：改名前的 boss）臨時加進選單，避免儲存時被當成「無權限」誤刪
+      if (u.factory && !FACTORY_ROLES.includes(u.factory.role) && !$('m-factory').querySelector('option[value="' + u.factory.role + '"]')) {
+        const o = document.createElement('option');
+        o.value = o.textContent = u.factory.role;
+        $('m-factory').appendChild(o);
+      }
+      $('m-factory').value = u.factory ? u.factory.role : '';
+      $('m-station').value = (u.factory && u.factory.station_id) || (stations[0] ? stations[0].id : '');
+      syncStation();
       $('m-active').checked = u.is_active;
       $('m-err').classList.add('hide');
       $('overlay').classList.remove('hide');
@@ -283,6 +344,10 @@
       set('oreo', $('m-oreo').value);
       set('questboard', $('m-questboard').value);
 
+      const fRole = $('m-factory').value;
+      const fStation = fRole === 'station' ? $('m-station').value : null;
+      if (fRole === 'station' && !fStation) { const e = $('m-err'); e.textContent = '請選擇負責哪一關'; e.classList.remove('hide'); return; }
+
       const btn = $('m-save');
       btn.disabled = true; btn.textContent = '儲存中⋯';
       const { error } = await sb.from('profiles').update({
@@ -292,15 +357,34 @@
         is_active: $('m-active').checked,
         updated_at: new Date().toISOString(),
       }).eq('id', editing.id);
-      btn.disabled = false; btn.textContent = '儲存';
-      if (error) { const e = $('m-err'); e.textContent = '儲存失敗：' + error.message; e.classList.remove('hide'); return; }
+      if (error) { btn.disabled = false; btn.textContent = '儲存'; const e = $('m-err'); e.textContent = '儲存失敗：' + error.message; e.classList.remove('hide'); return; }
 
-      // 更新本地資料並重畫
+      // 更新本地資料
       editing.display_name = $('m-name').value.trim() || null;
       editing.department = $('m-dept').value.trim() || null;
       editing.tool_roles = roles;
       editing.is_active = $('m-active').checked;
+
+      // 工廠關卡角色存在 factoryboard.app_user；有變才寫
+      const appUser = sb.schema('factoryboard').from('app_user');
+      const old = editing.factory;
+      let fErr = null;
+      if (!fRole && old) {
+        ({ error: fErr } = await appUser.delete().eq('id', editing.id));
+        if (!fErr) editing.factory = null;
+      } else if (fRole && (!old || old.role !== fRole || old.station_id !== fStation)) {
+        const row = { id: editing.id, name: (old && old.name) || editing.display_name || editing.email, role: fRole, station_id: fStation };
+        ({ error: fErr } = await appUser.upsert(row));
+        if (!fErr) editing.factory = row;
+      }
+      btn.disabled = false; btn.textContent = '儲存';
       render();
+      if (fErr) {
+        const e = $('m-err');
+        e.textContent = '其他權限已儲存，但工廠關卡儲存失敗：' + (fErr.code === '23503' ? '此人在工廠關卡有操作紀錄，無法移除，請改成其他角色' : fErr.message);
+        e.classList.remove('hide');
+        return;
+      }
       closeEdit();
     });
   </script>
