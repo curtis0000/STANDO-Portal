@@ -48,6 +48,7 @@
     .inactive td { opacity: .5; }
     .pending td { background: #FFF8E1; }
     .badge.wait { background: #FFE8A3; color: #8A5A00; }
+    .badge.unconfirmed { background: #FBE9E7; color: #d93025; margin-left: 4px; }
     .pending-bar { background: #FFF8E1; border: 1px solid #F3D98B; color: #8A5A00; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; }
     .table-wrap { overflow-x: auto; }
 
@@ -278,8 +279,10 @@
       const tb = $('rows');
       tb.innerHTML = '';
       const n = users.filter(isPending).length;
-      $('pending-bar').style.display = n ? '' : 'none';
-      $('pending-bar').textContent = '待開通 ' + n + ' 人：還沒有任何系統權限，已排在最上面。按「編輯」設定權限即完成開通。';
+      const m = users.filter(u => u.email_confirmed_at === null).length;
+      $('pending-bar').textContent = '待開通 ' + n + ' 人：還沒有任何系統權限，已排在最上面。按「編輯」設定權限即完成開通。'
+        + (m ? '另有 ' + m + ' 人還沒點確認信（標「未驗證信箱」），權限開了也登不進去，請提醒對方去信箱點連結。' : '');
+      $('pending-bar').style.display = (n || m) ? '' : 'none';
       if (!users.length) { tb.innerHTML = '<tr><td colspan="11" class="muted" style="text-align:center;padding:30px">暫無資料</td></tr>'; return; }
       users.forEach((u, i) => {
         const tr = document.createElement('tr');
@@ -295,7 +298,8 @@
           '<td>' + roleCell(u.tool_roles.oreo) + '</td>' +
           '<td>' + roleCell(u.tool_roles.questboard) + '</td>' +
           '<td>' + factoryCell(u.factory) + '</td>' +
-          '<td>' + (!u.is_active ? '<span class="badge off">停用</span>' : isPending(u) ? '<span class="badge wait">待開通</span>' : '<span class="badge">啟用</span>') + '</td>' +
+          '<td>' + (!u.is_active ? '<span class="badge off">停用</span>' : isPending(u) ? '<span class="badge wait">待開通</span>' : '<span class="badge">啟用</span>')
+                 + (u.email_confirmed_at === null ? '<span class="badge unconfirmed">未驗證信箱</span>' : '') + '</td>' +
           '<td style="text-align:right"><button class="btn-edit" data-i="' + i + '">編輯</button></td>';
         tb.appendChild(tr);
       });

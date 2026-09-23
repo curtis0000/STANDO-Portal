@@ -304,7 +304,9 @@ updateClock(); setInterval(updateClock, 30000);
     btn.disabled = false; btn.textContent = '登入';
     if (error) {
       const el = $('auth-err');
-      el.textContent = '登入失敗，請確認帳號密碼';
+      el.textContent = /not confirmed/i.test(error.message)
+        ? '信箱還沒驗證，請先到信箱點確認信裡的連結（可能在垃圾信件匣）'
+        : '登入失敗，請確認帳號密碼';
       el.classList.remove('hidden');
       return;
     }

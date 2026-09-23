@@ -68,7 +68,7 @@
 
     <form id="form-reg">
       <p class="step-title">建立你的帳號</p>
-      <p class="step-desc">註冊後系統會寄一封確認信。確認完成後，請等管理員開通各系統權限。</p>
+      <p class="step-desc">註冊後系統會寄一封確認信，<strong>一定要點信中連結</strong>，否則任何系統都登不進去。確認完成後，請等管理員開通各系統權限。</p>
       <label>暱稱（讓管理員知道你是誰）</label>
       <input type="text" id="name" placeholder="例：小明" required />
       <label>Email</label>
@@ -84,7 +84,7 @@
     <div id="done" class="done hide">
       <div class="big">✓</div>
       <p class="step-title">申請已送出</p>
-      <p class="step-desc">確認信已寄到 <strong id="email-echo"></strong>（可能在垃圾信件匣）。<br>點擊信中連結完成驗證後，請通知管理員開通權限。</p>
+      <p class="step-desc">確認信已寄到 <strong id="email-echo"></strong>（可能在垃圾信件匣）。<br><strong>沒點信中連結之前，任何系統都會顯示「帳號或密碼不對」。</strong><br>點完連結後，請通知管理員開通權限。</p>
       <a class="link" href="index.html">← 返回首頁</a>
     </div>
   </div>
@@ -108,13 +108,18 @@
 
       const btn = $('btn');
       btn.disabled = true; btn.textContent = '送出中⋯';
-      const { error } = await sb.auth.signUp({
+      const { data, error } = await sb.auth.signUp({
         email,
         password: pass,
         options: { data: { display_name: name } },
       });
       btn.disabled = false; btn.textContent = '送出申請';
       if (error) { showErr('申請失敗：' + error.message); return; }
+      // Email 已註冊過時 Supabase 不報錯也不寄信（防止探測帳號），只會回一個沒有 identities 的假使用者
+      if (!data.user || !data.user.identities || data.user.identities.length === 0) {
+        showErr('這個 Email 已經有帳號了，請直接回首頁登入；忘記密碼請用「忘記密碼」。');
+        return;
+      }
 
       $('email-echo').textContent = email;
       $('form-reg').classList.add('hide');
