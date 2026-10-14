@@ -2,9 +2,10 @@
 > 一行：只放現況與接下來；歷史在 docs/DEVLOG.md，規則在 權限整合.md。
 
 ## 當前游標
-**2026-10-15：首頁加第八張卡「STANDO ERP 概念圖」（不用登入），已 commit b72e3ad，工作樹乾淨**
-- 卡片連 https://stando-erp.vercel.app ，網址在 index.html 的 `erp_url`
-驗證：本機開 index.html 看到卡片、連結正確
+**2026-10-15：首頁下架 CHEF 卡片、加 STANDO ERP 概念圖卡片，已 commit c302b25，工作樹乾淨**
+- CHEF 只拿掉首頁卡片與 `chef_url`；admin.html 的 chef 角色欄與資料庫不動
+- ERP 概念圖卡片連 https://stando-erp.vercel.app ，不用登入
+驗證：本機開 index.html 剩七張卡
 
 ## 接下來
 **等用戶**：無
@@ -22,6 +23,7 @@ https://curtis0000.github.io/STANDO-Portal/ （通常 30 秒內生效）
 - 停用帳號擋不到工廠關卡（獨立名單），要擋請把工廠關卡設「（無權限）」
 
 ## 近期紀錄
+- 2026-10-15：首頁下架 CHEF 卡片（c302b25）
 - 2026-10-15：首頁加 STANDO ERP 概念圖卡片（b72e3ad）
 - 2026-09-23：註冊／登入／管理頁信箱驗證引導修正（a2e7390）
 - 2026-09-13：資安清理，收回未登入呼叫權限函式（78e010a）
