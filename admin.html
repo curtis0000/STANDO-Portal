@@ -97,7 +97,7 @@
         <thead>
           <tr>
             <th>暱稱</th><th>Email</th><th>部門</th>
-            <th>ELSA 2.0／3.0</th><th>ELSA 客戶版</th><th>CHEF</th><th>Worker</th><th>OREO</th><th>Questboard</th><th>工廠關卡</th><th>狀態</th><th></th>
+            <th>ELSA 2.0／3.0</th><th>CHEF</th><th>Worker</th><th>OREO</th><th>Questboard</th><th>工廠關卡</th><th>狀態</th><th></th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -301,8 +301,8 @@
           '<td>' + (u.display_name || '<span class="muted">—</span>') + '</td>' +
           '<td>' + (u.email || '<span class="muted">—</span>') + '</td>' +
           '<td>' + (u.department || '<span class="muted">—</span>') + '</td>' +
-          '<td>' + roleCell(u.tool_roles.elsa) + '</td>' +
-          '<td>' + roleCell(u.tool_roles.elsa_customer) + '</td>' +
+          // 客戶版不另開一欄（多一欄會把「編輯」鈕擠出版面），跟 ELSA 同一格用標籤標示
+          '<td>' + roleCell(u.tool_roles.elsa) + (u.tool_roles.elsa_customer ? ' <span class="badge">客戶版</span>' : '') + '</td>' +
           '<td>' + roleCell(u.tool_roles.chef) + '</td>' +
           '<td>' + roleCell(u.tool_roles.worker) + '</td>' +
           '<td>' + roleCell(u.tool_roles.oreo) + '</td>' +
