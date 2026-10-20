@@ -2,10 +2,10 @@
 > 一行：只放現況與接下來；歷史在 docs/DEVLOG.md，規則在 權限整合.md。
 
 ## 當前游標
-**2026-10-15：首頁下架 CHEF 卡片、加 STANDO ERP 概念圖卡片，已 commit c302b25，工作樹乾淨**
-- CHEF 只拿掉首頁卡片與 `chef_url`；admin.html 的 chef 角色欄與資料庫不動
-- ERP 概念圖卡片連 https://stando-erp.vercel.app ，不用登入
-驗證：本機開 index.html 剩七張卡
+**2026-10-20：註冊頁加「再輸入一次密碼」、後台加「ELSA 客戶版」欄（`tool_roles.elsa_customer`，只有 user），未 push**
+- ELSA 3.0 登入頁已拿掉自己的註冊，申請與忘記密碼一律連回 Portal（用戶：帳號流程集中在 Portal）
+- 客戶版角色只給外部客戶，不要跟員工的 elsa 混給（詳 權限整合.md §3）
+驗證：Playwright 開 register.html 兩次密碼不同會擋；admin.html 無腳本錯誤
 
 ## 接下來
 **等用戶**：無

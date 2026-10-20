@@ -97,7 +97,7 @@
         <thead>
           <tr>
             <th>暱稱</th><th>Email</th><th>部門</th>
-            <th>ELSA 2.0／3.0</th><th>CHEF</th><th>Worker</th><th>OREO</th><th>Questboard</th><th>工廠關卡</th><th>狀態</th><th></th>
+            <th>ELSA 2.0／3.0</th><th>ELSA 客戶版</th><th>CHEF</th><th>Worker</th><th>OREO</th><th>Questboard</th><th>工廠關卡</th><th>狀態</th><th></th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -159,6 +159,12 @@
             <select id="m-factory"></select>
           </div>
         </div>
+        <div class="field grid2">
+          <div>
+            <label>ELSA 客戶版（外部客戶自己畫圖，看不到價格）</label>
+            <select id="m-elsa-customer"></select>
+          </div>
+        </div>
         <div class="field" id="m-station-wrap" style="display:none">
           <label>負責哪一關</label>
           <select id="m-station"></select>
@@ -186,6 +192,8 @@
     const OREO_ROLES = ['', 'admin', 'office', 'warehouse', 'factory'];
     const QUESTBOARD_ROLES = ['', 'owner', 'sales', 'user'];
     const FACTORY_ROLES = ['', 'owner', 'office', 'manager', 'station'];
+    // ELSA 客戶版（2026-10-20）：外部客戶，只有 user 一種；key 另開 elsa_customer，不跟員工的 elsa 混
+    const CUSTOMER_ROLES = ['', 'user'];
     const ROLE_LABEL = {
       '': '（無權限）', owner: 'owner（擁有者）', admin: 'admin（管理員）',
       worker: 'worker（作業員）', user: 'user（一般）', guest: 'guest（訪客）',
@@ -207,6 +215,7 @@
     fillSelect($('m-oreo'), OREO_ROLES);
     fillSelect($('m-questboard'), QUESTBOARD_ROLES);
     fillSelect($('m-factory'), FACTORY_ROLES);
+    fillSelect($('m-elsa-customer'), CUSTOMER_ROLES);
     $('m-factory').addEventListener('change', syncStation);
     function syncStation() { $('m-station-wrap').style.display = $('m-factory').value === 'station' ? '' : 'none'; }
 
@@ -293,6 +302,7 @@
           '<td>' + (u.email || '<span class="muted">—</span>') + '</td>' +
           '<td>' + (u.department || '<span class="muted">—</span>') + '</td>' +
           '<td>' + roleCell(u.tool_roles.elsa) + '</td>' +
+          '<td>' + roleCell(u.tool_roles.elsa_customer) + '</td>' +
           '<td>' + roleCell(u.tool_roles.chef) + '</td>' +
           '<td>' + roleCell(u.tool_roles.worker) + '</td>' +
           '<td>' + roleCell(u.tool_roles.oreo) + '</td>' +
@@ -314,6 +324,7 @@
       $('m-name').value = u.display_name || '';
       $('m-dept').value = u.department || '';
       $('m-elsa').value = u.tool_roles.elsa || '';
+      $('m-elsa-customer').value = u.tool_roles.elsa_customer || '';
       $('m-chef').value = u.tool_roles.chef || '';
       $('m-worker').value = u.tool_roles.worker || '';
       $('m-oreo').value = u.tool_roles.oreo || '';
@@ -347,6 +358,7 @@
       set('worker', $('m-worker').value);
       set('oreo', $('m-oreo').value);
       set('questboard', $('m-questboard').value);
+      set('elsa_customer', $('m-elsa-customer').value);
 
       const fRole = $('m-factory').value;
       const fStation = fRole === 'station' ? $('m-station').value : null;

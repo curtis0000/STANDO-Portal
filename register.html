@@ -75,6 +75,8 @@
       <input type="email" id="email" placeholder="you@example.com" required autocomplete="username" />
       <label>密碼（至少 6 個字元）</label>
       <input type="password" id="pass" placeholder="設定密碼" required autocomplete="new-password" />
+      <label>再輸入一次密碼</label>
+      <input type="password" id="pass2" placeholder="再輸入一次，避免打錯" required autocomplete="new-password" />
       <div class="msg err hide" id="err"></div>
       <button type="submit" id="btn">送出申請</button>
     </form>
@@ -105,6 +107,7 @@
       const pass = $('pass').value;
       if (!name) { showErr('請填入暱稱'); return; }
       if (pass.length < 6) { showErr('密碼至少需要 6 個字元'); return; }
+      if (pass !== $('pass2').value) { showErr('兩次輸入的密碼不一樣，請再確認'); return; }
 
       const btn = $('btn');
       btn.disabled = true; btn.textContent = '送出中⋯';
