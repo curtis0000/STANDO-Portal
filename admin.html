@@ -359,6 +359,8 @@
       set('oreo', $('m-oreo').value);
       set('questboard', $('m-questboard').value);
       set('elsa_customer', $('m-elsa-customer').value);
+      // 員工權限與客戶版不能同時有：ELSA 那邊有 elsa 就給員工版（看得到價格），客戶版等於白開
+      if (roles.elsa && roles.elsa_customer) { const e = $('m-err'); e.textContent = '「ELSA 2.0／3.0」與「ELSA 客戶版」不能同時給：員工選前者、外部客戶選後者，另一個請設（無權限）'; e.classList.remove('hide'); return; }
 
       const fRole = $('m-factory').value;
       const fStation = fRole === 'station' ? $('m-station').value : null;
