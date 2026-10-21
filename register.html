@@ -59,6 +59,22 @@
     .hide { display: none; }
     .done { text-align: center; }
     .done .big { font-size: 40px; margin-bottom: 12px; }
+    .done .warn-title { font-size: 20px; font-weight: 600; color: #171A20; margin-bottom: 16px; }
+    .done .steps {
+      text-align: left;
+      background: #FFF6E5;
+      border: 2px solid #F5A623;
+      border-radius: 8px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .done .steps ol { padding-left: 22px; margin: 0; }
+    .done .steps li { margin-bottom: 6px; }
+    .done .steps li:last-child { margin-bottom: 0; }
+    .done .steps .mail { word-break: break-all; }
+    .done .steps .sub-note { font-size: 13px; color: #5C5E62; }
   </style>
 </head>
 <body>
@@ -84,9 +100,15 @@
     <a class="link" href="index.html">← 返回首頁</a>
 
     <div id="done" class="done hide">
-      <div class="big">✓</div>
-      <p class="step-title">申請已送出</p>
-      <p class="step-desc">確認信已寄到 <strong id="email-echo"></strong>（可能在垃圾信件匣）。<br><strong>沒點信中連結之前，任何系統都會顯示「帳號或密碼不對」。</strong><br>點完連結後，請通知管理員開通權限。</p>
+      <div class="big">📩</div>
+      <p class="warn-title">還差一步，現在還不能登入</p>
+      <div class="steps">
+        <ol>
+          <li>打開信箱 <strong class="mail" id="email-echo"></strong><br><span class="sub-note">找不到請翻垃圾信件匣</span></li>
+          <li><strong>點確認信裡的連結</strong><br><span class="sub-note">沒點之前，登入都會顯示「帳號或密碼不對」</span></li>
+          <li>通知管理員幫你開通權限</li>
+        </ol>
+      </div>
       <a class="link" href="index.html">← 返回首頁</a>
     </div>
   </div>
