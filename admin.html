@@ -97,7 +97,7 @@
         <thead>
           <tr>
             <th>暱稱</th><th>Email</th><th>部門</th>
-            <th>ELSA 2.0／3.0</th><th>CHEF</th><th>Worker</th><th>OREO</th><th>Questboard</th><th>工廠關卡</th><th>狀態</th><th></th>
+            <th>ELSA 2.0／3.0</th><th>CHEF</th><th>Worker</th><th>OREO</th><th>Questboard</th><th>ERP</th><th>工廠關卡</th><th>狀態</th><th></th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -155,6 +155,10 @@
             <select id="m-questboard"></select>
           </div>
           <div>
+            <label>ERP 權限</label>
+            <select id="m-erp"></select>
+          </div>
+          <div>
             <label>工廠關卡 權限</label>
             <select id="m-factory"></select>
           </div>
@@ -191,6 +195,7 @@
     const STD_ROLES  = ['', 'owner', 'admin', 'worker', 'user', 'guest'];
     const OREO_ROLES = ['', 'admin', 'office', 'warehouse', 'factory'];
     const QUESTBOARD_ROLES = ['', 'owner', 'sales', 'user'];
+    const ERP_ROLES = ['', 'owner', 'user'];
     const FACTORY_ROLES = ['', 'owner', 'office', 'manager', 'station'];
     // ELSA 客戶版（2026-10-20）：外部客戶，只有 user 一種；key 另開 elsa_customer，不跟員工的 elsa 混
     const CUSTOMER_ROLES = ['', 'user'];
@@ -214,6 +219,7 @@
     fillSelect($('m-worker'), STD_ROLES);
     fillSelect($('m-oreo'), OREO_ROLES);
     fillSelect($('m-questboard'), QUESTBOARD_ROLES);
+    fillSelect($('m-erp'), ERP_ROLES);
     fillSelect($('m-factory'), FACTORY_ROLES);
     fillSelect($('m-elsa-customer'), CUSTOMER_ROLES);
     $('m-factory').addEventListener('change', syncStation);
@@ -292,7 +298,7 @@
       $('pending-bar').textContent = '待開通 ' + n + ' 人：還沒有任何系統權限，已排在最上面。按「編輯」設定權限即完成開通。'
         + (m ? '另有 ' + m + ' 人還沒點確認信（標「未驗證信箱」），權限開了也登不進去，請提醒對方去信箱點連結。' : '');
       $('pending-bar').style.display = (n || m) ? '' : 'none';
-      if (!users.length) { tb.innerHTML = '<tr><td colspan="11" class="muted" style="text-align:center;padding:30px">暫無資料</td></tr>'; return; }
+      if (!users.length) { tb.innerHTML = '<tr><td colspan="12" class="muted" style="text-align:center;padding:30px">暫無資料</td></tr>'; return; }
       users.forEach((u, i) => {
         const tr = document.createElement('tr');
         if (!u.is_active) tr.className = 'inactive';
@@ -307,6 +313,7 @@
           '<td>' + roleCell(u.tool_roles.worker) + '</td>' +
           '<td>' + roleCell(u.tool_roles.oreo) + '</td>' +
           '<td>' + roleCell(u.tool_roles.questboard) + '</td>' +
+          '<td>' + roleCell(u.tool_roles.erp) + '</td>' +
           '<td>' + factoryCell(u.factory) + '</td>' +
           '<td>' + (!u.is_active ? '<span class="badge off">停用</span>' : isPending(u) ? '<span class="badge wait">待開通</span>' : '<span class="badge">啟用</span>')
                  + (u.email_confirmed_at === null ? '<span class="badge unconfirmed">未驗證信箱</span>' : '') + '</td>' +
@@ -329,6 +336,7 @@
       $('m-worker').value = u.tool_roles.worker || '';
       $('m-oreo').value = u.tool_roles.oreo || '';
       $('m-questboard').value = u.tool_roles.questboard || '';
+      $('m-erp').value = u.tool_roles.erp || '';
       // 認不得的角色名（例：改名前的 boss）臨時加進選單，避免儲存時被當成「無權限」誤刪
       if (u.factory && !FACTORY_ROLES.includes(u.factory.role) && !$('m-factory').querySelector('option[value="' + u.factory.role + '"]')) {
         const o = document.createElement('option');
@@ -358,6 +366,7 @@
       set('worker', $('m-worker').value);
       set('oreo', $('m-oreo').value);
       set('questboard', $('m-questboard').value);
+      set('erp', $('m-erp').value);
       set('elsa_customer', $('m-elsa-customer').value);
       // 員工權限與客戶版不能同時有：ELSA 那邊有 elsa 就給員工版（看得到價格），客戶版等於白開
       if (roles.elsa && roles.elsa_customer) { const e = $('m-err'); e.textContent = '「ELSA 2.0／3.0」與「ELSA 客戶版」不能同時給：員工選前者、外部客戶選後者，另一個請設（無權限）'; e.classList.remove('hide'); return; }
